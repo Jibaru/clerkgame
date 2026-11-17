@@ -3,6 +3,8 @@
 One lap in the Clerk Van through an alpine valley. Collect cookies, API keys and passkeys, beat
 the clock and climb the public leaderboard. Built with Next.js 16, Three.js r186 and Clerk.
 
+Play it at https://clerkgame.crafter.games
+
 Design: [GDD.md](GDD.md). Asset licenses: [public/CREDITS.md](public/CREDITS.md).
 
 ## Develop
