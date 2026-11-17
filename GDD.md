@@ -23,7 +23,7 @@ ones, so everything here is scoped to a single circuit.
 | --- | --- | --- |
 | Cookie (from the "FREE COOKIES" livery) | 10 | Abundant, in lines along the asphalt |
 | API key | 50 | Rare, on the outside of corners and in the tunnel |
-| Passkey | 100 | Only inside risky shortcuts |
+| Passkey | 100 | Off the ideal line: two in the gravel shortcut, one in the stream bed under the bridge |
 | `<`, `SignIn`, `/>` pieces | x1.5 multiplier when all three are collected | One per track third |
 | Session boost | +50 % speed for 3 s | Before the main straight and after the hairpin |
 | Spam bot (enemy) | Steals up to 3 cookies on contact and shoves the van | Patrols the forest section |
@@ -75,11 +75,13 @@ Hitting a wall or a bot cuts speed to 20 %.
 
 - Van: `clerk_van.glb` (CC BY 4.0 base model by circlegent, Clerk livery by Jibaru).
 - World: Poly Haven alps HDRI, PBR terrain splat, ez-tree forest, Poly Haven photoscans,
-  Kenney kits (racing, city commercial, nature). All CC0.
+  Kenney kits (racing props, commercial buildings for the HQ). Start arch, grandstand, tunnel
+  and bridge are generated in code. All CC0.
 - Collectibles: game-icons.net SVGs (CC BY 3.0) extruded in Three.js, emissive Clerk purple/lime,
   floating and spinning, particle burst on pickup.
-- Music: one CC0 loop from OpenGameArt; SFX from Kenney (impact, interface, jingles) plus a
-  synthesized engine. Every file is listed in `public/CREDITS.md`.
+- Music: three CC0 chiptunes by Juhani Junkala (OpenGameArt). Every other sound (engine,
+  tyres, pickups, hits, countdown, fanfare) is synthesized with the Web Audio API. Every file
+  is listed in `public/CREDITS.md`.
 
 ## Cut list (not in v1)
 
