@@ -1,16 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { GameHandle, Snapshot } from '@/game/createGame'
 import { ITEM_COUNTS } from '@/game/items'
-
-function fmt(ms: number): string {
-  const total = Math.max(0, Math.floor(ms))
-  const m = Math.floor(total / 60000)
-  const s = Math.floor((total % 60000) / 1000)
-  const cs = Math.floor((total % 1000) / 10)
-  return `${m}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`
-}
+import { formatTime as fmt } from './format'
+import { TopBar } from './TopBar'
+import { useRunSubmission } from './useRunSubmission'
 
 export function Hud({
   game,
@@ -26,15 +22,29 @@ export function Hud({
   onStart: () => void
 }) {
   const coarse = useCoarsePointer()
+  const submission = useRunSubmission()
   return (
     <div className="pointer-events-none absolute inset-0 select-none text-white">
       {snap.phase === 'loading' && <Loading progress={snap.progress} />}
+      {(snap.phase === 'ready' || snap.phase === 'finished') && <TopBar />}
       {snap.phase === 'ready' && <Start onStart={onStart} coarse={coarse} />}
+      {snap.phase === 'ready' && submission.restored.status !== 'idle' && (
+        <RestoredToast state={submission.restored} onClose={submission.dismissRestored} />
+      )}
       {(snap.phase === 'countdown' || snap.phase === 'racing' || snap.phase === 'finished') && (
         <RaceHud snap={snap} />
       )}
       {snap.phase === 'countdown' && <Countdown value={snap.countdown} />}
-      {snap.phase === 'finished' && snap.result && <Finished snap={snap} onRetry={game.restart} />}
+      {snap.phase === 'finished' && snap.result && (
+        <Finished
+          snap={snap}
+          onRetry={() => {
+            submission.reset()
+            game.restart()
+          }}
+          submission={submission}
+        />
+      )}
       {coarse && snap.phase === 'racing' && <TouchControls game={game} />}
       {snap.phase !== 'loading' && (
         <button
@@ -181,9 +191,18 @@ function RaceHud({ snap }: { snap: Snapshot }) {
   )
 }
 
-function Finished({ snap, onRetry }: { snap: Snapshot; onRetry: () => void }) {
+function Finished({
+  snap,
+  onRetry,
+  submission,
+}: {
+  snap: Snapshot
+  onRetry: () => void
+  submission: ReturnType<typeof useRunSubmission>
+}) {
   const r = snap.result
   if (!r) return null
+  const { state, submit, isSignedIn } = submission
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-clerk-ink/60 p-4 backdrop-blur-sm">
       <div className="pointer-events-auto w-full max-w-md rounded-2xl bg-clerk-ink/90 p-6 ring-1 ring-white/10">
@@ -203,24 +222,77 @@ function Finished({ snap, onRetry }: { snap: Snapshot; onRetry: () => void }) {
             {r.botHits} ({r.cookiesLost} cookies lost)
           </dd>
         </dl>
-        <div className="mt-6 flex gap-2">
+        <div className="mt-5 min-h-6 text-sm">
+          {state.status === 'saving' && <p className="text-clerk-gray">Saving your lap…</p>}
+          {state.status === 'saved' && (
+            <p className="text-clerk-lime">
+              Saved.{' '}
+              {state.rank ? (
+                <>
+                  You are <span className="font-mono font-semibold">#{state.rank.rank}</span> of{' '}
+                  {state.rank.total}.
+                </>
+              ) : null}{' '}
+              <Link href="/leaderboard" className="underline">
+                See the leaderboard
+              </Link>
+            </p>
+          )}
+          {state.status === 'error' && <p className="text-red-400">{state.message}</p>}
+        </div>
+        <div className="mt-3 flex gap-2">
           <button
             type="button"
             onClick={onRetry}
             className="h-11 flex-1 rounded-lg bg-white/10 text-sm font-semibold ring-1 ring-white/15 transition hover:bg-white/15"
           >
-            Run again
+            Run again <span className="text-clerk-gray">(R)</span>
           </button>
-          <button
-            type="button"
-            disabled
-            className="h-11 flex-1 rounded-lg bg-clerk-purple text-sm font-semibold opacity-60"
-            title="Leaderboard coming next"
-          >
-            Save to leaderboard
-          </button>
+          {state.status !== 'saved' && (
+            <button
+              type="button"
+              onClick={() => submit(r)}
+              disabled={state.status === 'saving'}
+              className="h-11 flex-1 rounded-lg bg-clerk-purple text-sm font-semibold transition hover:bg-clerk-purple-dark disabled:opacity-60"
+            >
+              {isSignedIn ? 'Save to leaderboard' : 'Sign in to save'}
+            </button>
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function RestoredToast({
+  state,
+  onClose,
+}: {
+  state: ReturnType<typeof useRunSubmission>['restored']
+  onClose: () => void
+}) {
+  return (
+    <div className="pointer-events-auto absolute left-1/2 top-16 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-clerk-ink/90 px-4 py-2 text-sm ring-1 ring-white/10">
+      {state.status === 'saving' && (
+        <span className="text-clerk-gray">Saving the lap you drove before signing in…</span>
+      )}
+      {state.status === 'saved' && (
+        <span className="text-clerk-lime">
+          Your lap is on the board{state.rank ? ` at #${state.rank.rank}` : ''}.{' '}
+          <Link href="/leaderboard" className="underline">
+            See it
+          </Link>
+        </span>
+      )}
+      {state.status === 'error' && <span className="text-red-400">{state.message}</span>}
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Dismiss"
+        className="text-clerk-gray hover:text-white"
+      >
+        ×
+      </button>
     </div>
   )
 }

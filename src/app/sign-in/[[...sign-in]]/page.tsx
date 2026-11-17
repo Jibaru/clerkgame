@@ -1,12 +1,15 @@
-import { SignIn } from '@clerk/nextjs'
 import { Suspense } from 'react'
+import { AuthShell } from '@/components/auth/AuthShell'
+import { SignInForm } from '@/components/auth/SignInForm'
+
+export const metadata = { title: 'Sign in · Clerk Van Run' }
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <AuthShell title="Sign in" subtitle="Save your laps to the public leaderboard.">
       <Suspense>
-        <SignIn />
+        <SignInForm />
       </Suspense>
-    </div>
+    </AuthShell>
   )
 }
