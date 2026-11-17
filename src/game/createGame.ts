@@ -134,7 +134,10 @@ export function createGame(parent: HTMLElement): GameHandle {
 
   const spawn = track.at(0.995)
   const spawnPos = spawn.point.clone()
-  const spawnHeading = Math.atan2(spawn.tangent.x, spawn.tangent.z)
+  // Aim down the straight, not along the local tangent: at the line the spline is still
+  // finishing the last bend, and 5° off sends an untouched van onto the grass.
+  const ahead = track.at(0.07).point
+  const spawnHeading = Math.atan2(ahead.x - spawnPos.x, ahead.z - spawnPos.z)
 
   const camPos = new THREE.Vector3()
   const camLook = new THREE.Vector3()
@@ -604,6 +607,7 @@ export function createGame(parent: HTMLElement): GameHandle {
         camOverride = null
       },
       /** Hide the pickups within r metres of the van (clean framing for screenshots). */
+      offCentre: () => (van ? track.nearest(van.position).distance : 0),
       clearItemsNear: (r: number) => {
         if (!van || !collectibles) return
         for (const c of collectibles.all) {
