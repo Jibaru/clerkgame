@@ -19,6 +19,16 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="h-full">
+      <head>
+        {/* Start the two biggest downloads while the JavaScript is still arriving. */}
+        <link rel="preload" href="/models/clerk_van.glb" as="fetch" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          href="/textures/alps_field/alps_field_1k.hdr"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="h-full font-sans">
         <ClerkProvider
           // Read on the server at request time, so one image serves dev and production keys.

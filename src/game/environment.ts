@@ -30,7 +30,7 @@ const TERRAIN_SEGMENTS = 220
 const MOUNTAIN_START = 260
 const FOG_NEAR = 250
 const FOG_FAR = 900
-const HDRI_URL = `${TEXTURES_URL}/alps_field/alps_field_2k.hdr`
+const HDRI_URL = `${TEXTURES_URL}/alps_field/alps_field_1k.hdr`
 
 /** Road-distance grid cell size in metres. Shared by the height field and the shader. */
 const ROAD_CELL = 8
@@ -431,7 +431,7 @@ function analyseHdr(tex: THREE.DataTexture): { sun: THREE.Vector3; horizon: THRE
   let bestI = 0
   let bestJ = 0
   const stride = 4
-  // Coarse scan: every 2nd texel is plenty for a 2k map.
+  // Coarse scan: every 2nd texel is plenty for a 1k map.
   for (let j = 0; j < height; j += 2) {
     for (let i = 0; i < width; i += 2) {
       texel(data, (j * width + i) * stride, px)

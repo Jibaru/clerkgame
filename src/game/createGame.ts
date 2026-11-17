@@ -539,9 +539,11 @@ export function createGame(parent: HTMLElement): GameHandle {
       bots = b
       setProgress(0.75)
       await world.ready
-      setProgress(0.9)
-      await world.env.ready
-      if (scene.fog) scene.fog.color.set(0xbfcdd9)
+      setProgress(0.95)
+      // The sky keeps loading behind the start screen; the placeholder colour covers it.
+      world.env.ready.then(() => {
+        if (scene.fog) scene.fog.color.set(0xbfcdd9)
+      })
     })
     .catch((err) => console.error('game failed to load', err))
     .finally(() => {

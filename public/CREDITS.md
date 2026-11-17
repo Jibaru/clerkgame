@@ -15,7 +15,7 @@
 
 ## Textures
 
-- **textures/alps_field/alps_field_2k.hdr**: "Alps Field" HDRI by Poly Haven
+- **textures/alps_field/alps_field_1k.hdr**: "Alps Field" HDRI by Poly Haven
   (https://polyhaven.com/a/alps_field), CC0. Sky, image-based lighting and fog colour.
 - **textures/asphalt_02/**: "Asphalt 02" by Poly Haven (https://polyhaven.com/a/asphalt_02), CC0.
 - **textures/Grass005/**, **Ground037/**, **Rock051/**, **Gravel023/**: ambientCG

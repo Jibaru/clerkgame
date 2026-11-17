@@ -21,5 +21,13 @@ const t0 = Date.now()
 await page.waitForFunction(() => window.__game.snapshot().phase === 'finished')
 const snap = await page.evaluate(() => window.__game.snapshot())
 console.log(`finished after ${((Date.now() - t0) / 1000).toFixed(0)} s real time`)
-console.log(JSON.stringify({ timeMs: snap.result.timeMs, score: snap.result.score, collected: snap.result.collected, botHits: snap.result.botHits, pickups: snap.result.pickups.length }))
+console.log(
+  JSON.stringify({
+    timeMs: snap.result.timeMs,
+    score: snap.result.score,
+    collected: snap.result.collected,
+    botHits: snap.result.botHits,
+    pickups: snap.result.pickups.length,
+  }),
+)
 await browser.close()

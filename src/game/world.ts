@@ -3,7 +3,7 @@ import { buildEnvironment, type Environment } from './environment'
 import { loadKitModel } from './kits'
 import { createRoadMaterials, loadTiling, TEXTURES_URL } from './materials'
 import { buildRibbon, ROAD_W, SHORTCUT_W, SHOULDER_W, Shortcut, Track, type TrackSample } from './track'
-import { type Blocked, scatterVegetation } from './vegetation'
+import type { Blocked } from './vegetation'
 
 export const COLORS = {
   purple: 0x6c47ff,
@@ -113,8 +113,11 @@ export function buildWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer, op
     }
     return false
   }
+  // The vegetation module (ez-tree ships its bark and leaf textures inline, several MB of JS)
+  // is fetched only once the props are in, so it never delays the start screen.
   ready
-    .then(() => scatterVegetation(root, track, blocked, env.heightAt, { lite: options.lite }))
+    .then(() => import('./vegetation'))
+    .then((m) => m.scatterVegetation(root, track, blocked, env.heightAt, { lite: options.lite }))
     .catch((err) => console.error('vegetation failed', err))
 
   return {
