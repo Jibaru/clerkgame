@@ -72,7 +72,7 @@ export function SignInForm() {
           Sent to <span className="text-gray-300">{email}</span>
         </p>
         <button type="submit" className={s.primary} disabled={busy}>
-          {busy ? 'Verifying…' : 'Continue'}
+          <span>{busy ? 'Verifying…' : 'Continue'}</span>
         </button>
         <GlobalErrors errors={errors.global} />
         <button
@@ -94,10 +94,14 @@ export function SignInForm() {
     <form onSubmit={sendCode} className="flex flex-col gap-4">
       <div className="grid gap-2">
         <button type="button" className={s.secondary} disabled={busy} onClick={() => withProvider('github')}>
-          <ProviderIcon provider="github" /> Continue with GitHub
+          <span>
+            <ProviderIcon provider="github" /> Continue with GitHub
+          </span>
         </button>
         <button type="button" className={s.secondary} disabled={busy} onClick={() => withProvider('google')}>
-          <ProviderIcon provider="google" /> Continue with Google
+          <span>
+            <ProviderIcon provider="google" /> Continue with Google
+          </span>
         </button>
       </div>
       <p className={s.divider}>or</p>
@@ -119,7 +123,7 @@ export function SignInForm() {
         <FieldError error={errors.fields.identifier} />
       </div>
       <button type="submit" className={s.primary} disabled={busy}>
-        {busy ? 'Sending…' : 'Continue with email'}
+        <span>{busy ? 'Sending…' : 'Continue with email'}</span>
       </button>
       <button type="button" className={s.link} disabled={busy} onClick={withPasskey}>
         Use a passkey

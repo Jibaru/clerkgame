@@ -38,3 +38,8 @@ From game-icons.net, licensed CC BY 3.0 (https://creativecommons.org/licenses/by
   CC0. Re-encoded from WAV to MP3.
 - Sound effects (engine, tyres, pickups, hits, countdown, fanfare) are synthesized at runtime
   with the Web Audio API; no third-party samples.
+
+## Fonts
+
+- **fonts/BarlowCondensed-*.woff2**: Barlow Condensed by Jeremy Tribby (https://tribby.com/fonts/barlow/),
+  SIL Open Font License 1.1. Latin subset from Google Fonts. Used for the HUD and menus.

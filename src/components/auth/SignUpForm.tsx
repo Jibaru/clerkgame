@@ -66,7 +66,7 @@ export function SignUpForm() {
           Sent to <span className="text-gray-300">{email}</span>
         </p>
         <button type="submit" className={s.primary} disabled={busy}>
-          {busy ? 'Verifying…' : 'Create account'}
+          <span>{busy ? 'Verifying…' : 'Create account'}</span>
         </button>
         <GlobalErrors errors={errors.global} />
       </form>
@@ -77,10 +77,14 @@ export function SignUpForm() {
     <form onSubmit={sendCode} className="flex flex-col gap-4">
       <div className="grid gap-2">
         <button type="button" className={s.secondary} disabled={busy} onClick={() => withProvider('github')}>
-          <ProviderIcon provider="github" /> Continue with GitHub
+          <span>
+            <ProviderIcon provider="github" /> Continue with GitHub
+          </span>
         </button>
         <button type="button" className={s.secondary} disabled={busy} onClick={() => withProvider('google')}>
-          <ProviderIcon provider="google" /> Continue with Google
+          <span>
+            <ProviderIcon provider="google" /> Continue with Google
+          </span>
         </button>
       </div>
       <p className={s.divider}>or</p>
@@ -120,7 +124,7 @@ export function SignUpForm() {
       {/* Clerk's bot detection renders its widget here when the instance requires it. */}
       <div id="clerk-captcha" className="empty:hidden" />
       <button type="submit" className={s.primary} disabled={busy}>
-        {busy ? 'Sending…' : 'Continue with email'}
+        <span>{busy ? 'Sending…' : 'Continue with email'}</span>
       </button>
       <FieldError error={errors.fields.captcha} />
       <GlobalErrors errors={errors.global} />

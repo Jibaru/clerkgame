@@ -3,36 +3,38 @@
 import { SignOutButton, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 
-/** Leaderboard link and the session, shown outside of the race itself. */
+/** Leaderboard link and the session as slanted chips, shown outside of the race itself. */
 export function TopBar() {
   const { user, isLoaded } = useUser()
+  const chip = 'btn-race btn-ghost display flex h-10 items-center px-4 text-base tracking-wider'
   return (
-    <div className="pointer-events-auto absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-1 rounded-full bg-clerk-ink/70 p-1 text-sm ring-1 ring-white/10 backdrop-blur">
-      <Link href="/leaderboard" className="rounded-full px-3 py-1.5 hover:bg-white/10">
-        Leaderboard
+    <div className="pointer-events-auto absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-2 slide-in-left">
+      <Link href="/leaderboard" className={chip}>
+        <span>Leaderboard</span>
       </Link>
       {!isLoaded ? null : user ? (
-        <span className="flex items-center gap-2 pl-2">
-          {user.imageUrl ? (
-            // biome-ignore lint/performance/noImgElement: Clerk avatar URL, already sized.
-            <img src={user.imageUrl} alt="" width={24} height={24} className="size-6 rounded-full" />
-          ) : null}
-          <span className="max-w-28 truncate text-gray-200">{user.username ?? user.firstName ?? 'you'}</span>
+        <>
+          <span className={`${chip} gap-2 normal-case tracking-normal`}>
+            <span className="flex items-center gap-2">
+              {user.imageUrl ? (
+                // biome-ignore lint/performance/noImgElement: Clerk avatar URL, already sized.
+                <img src={user.imageUrl} alt="" width={22} height={22} className="size-[22px] rounded-full" />
+              ) : null}
+              <span className="max-w-28 truncate">{user.username ?? user.firstName ?? 'you'}</span>
+            </span>
+          </span>
           <SignOutButton>
-            <button
-              type="button"
-              className="rounded-full px-3 py-1.5 text-clerk-gray hover:bg-white/10 hover:text-white"
-            >
-              Sign out
+            <button type="button" className={`${chip} text-clerk-gray hover:text-white`}>
+              <span>Sign out</span>
             </button>
           </SignOutButton>
-        </span>
+        </>
       ) : (
         <Link
           href="/sign-in"
-          className="rounded-full bg-clerk-purple px-3 py-1.5 font-medium hover:bg-clerk-purple-dark"
+          className="btn-race btn-purple display flex h-10 items-center px-4 text-base tracking-wider"
         >
-          Sign in
+          <span>Sign in</span>
         </Link>
       )}
     </div>

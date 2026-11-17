@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { formatTime } from '@/components/format'
+import { Checker } from '@/components/ui'
 import { currentPlayer } from '@/lib/player'
 import { rankOf, topRuns } from '@/lib/runs'
 
@@ -10,75 +11,90 @@ export default async function LeaderboardPage() {
   const player = await currentPlayer()
   const [rows, me] = await Promise.all([topRuns(100), player ? rankOf(player.userId) : null])
   return (
-    <main className="min-h-full bg-clerk-ink bg-[radial-gradient(60%_40%_at_50%_0%,rgba(108,71,255,0.25),transparent)] px-4 py-10 text-white">
+    <main className="min-h-full bg-clerk-ink bg-[radial-gradient(70%_45%_at_50%_0%,rgba(108,71,255,0.35),transparent)] px-4 py-10 text-white">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Link href="/" className="text-xs uppercase tracking-wider text-clerk-gray hover:text-white">
-              ← Back to the van
+            <Link
+              href="/"
+              className="btn-race btn-ghost display inline-flex h-9 items-center px-3 text-sm tracking-wider"
+            >
+              <span>← Back to the van</span>
             </Link>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">Leaderboard</h1>
-            <p className="mt-1 text-sm text-gray-400">
-              Best lap per driver. Score = items × bonus + time bonus.
+            <h1 className="racing-title mt-5 text-6xl sm:text-7xl">
+              Leader<span className="accent">board</span>
+            </h1>
+            <Checker className="mt-4 h-2 w-48 skew-x-[-8deg]" />
+            <p className="display mt-3 text-base tracking-wider text-gray-400">
+              Best lap per driver · score = items × bonus + time bonus
             </p>
           </div>
           {player ? (
-            <p className="rounded-lg bg-white/5 px-3 py-2 text-sm ring-1 ring-white/10">
-              {me ? (
-                <>
-                  You are <span className="font-mono font-semibold text-white">#{me.rank}</span> of {me.total}
-                </>
-              ) : (
-                'No saved lap yet. Go drive!'
-              )}
+            <p className="btn-race btn-purple display px-4 py-2 text-lg">
+              <span>{me ? `You are #${me.rank} of ${me.total}` : 'No saved lap yet. Go drive!'}</span>
             </p>
           ) : (
             <Link
               href="/sign-in?redirect_url=/leaderboard"
-              className="text-sm text-purple-300 hover:underline"
+              className="btn-race btn-purple display px-4 py-2 text-lg"
             >
-              Sign in to see your rank
+              <span>Sign in to see your rank</span>
             </Link>
           )}
         </div>
         {rows.length === 0 ? (
-          <p className="rounded-2xl bg-white/5 p-8 text-center text-sm text-gray-400 ring-1 ring-white/10">
-            Nobody has crossed the line yet. The first lap is yours.
-          </p>
+          <div className="panel p-8 text-center">
+            <p className="unskew display text-xl tracking-wider text-gray-300">
+              Nobody has crossed the line yet. The first lap is yours.
+            </p>
+          </div>
         ) : (
-          <ol className="overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10">
+          <ol className="flex flex-col gap-2">
             {rows.map((r) => {
               const mine = player?.userId === r.userId
+              const podium =
+                r.rank === 1
+                  ? 'bg-cookie text-clerk-ink'
+                  : r.rank === 2
+                    ? 'bg-gray-200 text-clerk-ink'
+                    : r.rank === 3
+                      ? 'bg-amber-700 text-white'
+                      : 'bg-black/50 text-clerk-gray'
               return (
-                <li
-                  key={r.userId}
-                  className={`flex items-center gap-3 border-b border-white/5 px-4 py-3 last:border-b-0 ${mine ? 'bg-clerk-purple/20' : ''}`}
-                >
-                  <span className="w-8 shrink-0 font-mono text-sm text-clerk-gray">#{r.rank}</span>
-                  {r.imageUrl ? (
-                    // biome-ignore lint/performance/noImgElement: avatars come from Clerk's CDN with their own sizing.
-                    <img
-                      src={r.imageUrl}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="size-8 shrink-0 rounded-full bg-white/10"
-                    />
-                  ) : (
-                    <span className="size-8 shrink-0 rounded-full bg-white/10" />
-                  )}
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.username}</span>
-                  <span className="hidden gap-2 text-xs text-clerk-gray sm:flex">
-                    <span>🍪 {r.collected.cookie}</span>
-                    <span>🔑 {r.collected.key}</span>
-                    <span>🪪 {r.collected.passkey}</span>
-                  </span>
-                  <span className="w-16 text-right font-mono text-xs text-clerk-gray">
-                    {formatTime(r.timeMs)}
-                  </span>
-                  <span className="w-16 text-right font-mono text-sm font-semibold tabular-nums">
-                    {r.score}
-                  </span>
+                <li key={r.userId} className={`panel px-4 py-2.5 ${mine ? 'panel-purple' : ''}`}>
+                  <div className="unskew flex items-center gap-3">
+                    <span
+                      className={`display flex h-8 w-10 shrink-0 items-center justify-center text-lg font-extrabold italic ${podium}`}
+                    >
+                      {r.rank}
+                    </span>
+                    {r.imageUrl ? (
+                      // biome-ignore lint/performance/noImgElement: avatars come from Clerk's CDN with their own sizing.
+                      <img
+                        src={r.imageUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="size-8 shrink-0 rounded-full bg-white/10"
+                      />
+                    ) : (
+                      <span className="size-8 shrink-0 rounded-full bg-white/10" />
+                    )}
+                    <span className="display min-w-0 flex-1 truncate text-xl font-extrabold">
+                      {r.username}
+                    </span>
+                    <span className="display hidden gap-3 text-sm text-clerk-gray sm:flex">
+                      <span className="text-cookie">🍪 {r.collected.cookie}</span>
+                      <span>🔑 {r.collected.key}</span>
+                      <span className="text-clerk-lime">🪪 {r.collected.passkey}</span>
+                    </span>
+                    <span className="display w-16 text-right text-sm tabular-nums text-clerk-gray">
+                      {formatTime(r.timeMs)}
+                    </span>
+                    <span className="display w-16 text-right text-2xl font-black italic tabular-nums text-clerk-lime">
+                      {r.score}
+                    </span>
+                  </div>
                 </li>
               )
             })}

@@ -8,9 +8,9 @@ export const styles = {
   otp: 'h-12 w-full rounded-md bg-black/40 text-center font-mono text-xl tracking-[0.5em] text-white ring-1 ring-white/15 ring-inset focus:ring-2 focus:ring-clerk-purple focus:outline-none',
   error: 'text-xs text-red-400',
   primary:
-    'inline-flex h-10 w-full items-center justify-center rounded-md bg-clerk-purple text-sm font-semibold text-white transition hover:bg-clerk-purple-dark disabled:opacity-50',
+    'btn-race btn-purple inline-flex h-11 w-full items-center justify-center text-lg [&>span]:flex [&>span]:items-center [&>span]:gap-2',
   secondary:
-    'inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-white/10 text-sm font-medium text-white ring-1 ring-white/10 ring-inset transition hover:bg-white/15 disabled:opacity-50',
+    'btn-race btn-ghost inline-flex h-11 w-full items-center justify-center text-base [&>span]:flex [&>span]:items-center [&>span]:gap-2',
   link: 'text-sm text-purple-300 hover:underline disabled:opacity-50',
   divider:
     'flex items-center gap-3 text-xs text-gray-500 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10',
