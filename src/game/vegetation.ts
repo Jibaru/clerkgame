@@ -2,6 +2,7 @@ import { Tree, TreePreset } from '@dgreenheck/ez-tree'
 import * as THREE from 'three'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { assetUrl } from './assets'
 import { ROAD_W, type Track } from './track'
 
 /**
@@ -12,7 +13,7 @@ import { ROAD_W, type Track } from './track'
  * Everything is deterministic (seeded) and placed on the terrain through `heightAt`.
  */
 
-const REAL_URL = '/models/real'
+const REAL_URL = assetUrl('/models/real')
 
 const PLANT_MODELS = {
   fern: 'real/fern_02',

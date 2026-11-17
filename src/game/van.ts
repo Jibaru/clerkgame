@@ -1,8 +1,9 @@
 import * as THREE from 'three'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { assetUrl } from './assets'
 
-export const VAN_URL = '/models/clerk_van.glb'
+export const VAN_URL = assetUrl('/models/clerk_van.glb')
 const WHEEL_R = 0.356
 const WHEELBASE = 3.75
 

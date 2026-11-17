@@ -1,0 +1,26 @@
+name: smoke
+# Measures the public deployment from a datacenter: time to first byte and asset throughput.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Base URL
+        default: https://clerkgame.crafter.games
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pages and API
+        run: |
+          for p in / /leaderboard /api/leaderboard /sign-in; do
+            curl -s -o /dev/null -w "$p -> %{http_code} ttfb=%{time_starttransfer}s total=%{time_total}s\n" --max-time 60 "${{ inputs.base }}$p"
+          done
+      - name: Asset throughput
+        run: |
+          for p in /models/clerk_van.glb /textures/alps_field/alps_field_1k.hdr /audio/race.mp3; do
+            curl -s -o /dev/null -w "$p -> %{size_download} B in %{time_total}s = %{speed_download} B/s\n" --max-time 120 "${{ inputs.base }}$p"
+          done
+          echo "4 parallel downloads of the van:"
+          t0=$(date +%s.%N)
+          for i in 1 2 3 4; do curl -s -o /dev/null --max-time 120 "${{ inputs.base }}/models/clerk_van.glb?p=$i" & done; wait
+          echo "wall: $(echo "$(date +%s.%N) - $t0" | bc) s for 4 x 2.7 MB"

@@ -1,3 +1,4 @@
+import { assetUrl } from './assets'
 import type { GameEvent, Snapshot } from './createGame'
 
 /**
@@ -16,9 +17,9 @@ export type GameAudio = {
 }
 
 const MUSIC = {
-  title: '/audio/title.mp3',
-  race: '/audio/race.mp3',
-  ending: '/audio/ending.mp3',
+  title: assetUrl('/audio/title.mp3'),
+  race: assetUrl('/audio/race.mp3'),
+  ending: assetUrl('/audio/ending.mp3'),
 } as const
 type TrackName = keyof typeof MUSIC
 

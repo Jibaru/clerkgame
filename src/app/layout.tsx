@@ -1,6 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
+import { assetUrl } from '@/game/assets'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className="h-full">
       <head>
         {/* Start the two biggest downloads while the JavaScript is still arriving. */}
-        <link rel="preload" href="/models/clerk_van.glb" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href={assetUrl('/models/clerk_van.glb')} as="fetch" crossOrigin="anonymous" />
         <link
           rel="preload"
           href="/textures/alps_field/alps_field_1k.hdr"

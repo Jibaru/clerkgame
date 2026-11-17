@@ -1,10 +1,11 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { assetUrl } from './assets'
 
 const loader = new GLTFLoader()
 const cache = new Map<string, Promise<THREE.Group>>()
 
-export const KITS_URL = '/models/kits'
+export const KITS_URL = assetUrl('/models/kits')
 
 /** Loads a kit model once and hands out clones. Path is `<kit>/<file>.glb`. */
 export function loadKitModel(path: string): Promise<THREE.Group> {

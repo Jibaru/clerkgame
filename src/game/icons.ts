@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js'
+import { assetUrl } from './assets'
 
 /**
  * game-icons.net SVGs (512 × 512, a black background path and a white icon path) extruded into
@@ -13,7 +14,7 @@ export function loadIconGeometry(name: string, size: number, depth = 0.12): Prom
   if (!p) {
     p = new Promise((resolve, reject) => {
       new SVGLoader().load(
-        `/icons/${name}.svg`,
+        assetUrl(`/icons/${name}.svg`),
         (data) => {
           const shapes: THREE.Shape[] = []
           for (const path of data.paths) {

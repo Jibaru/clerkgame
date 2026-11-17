@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { assetUrl } from './assets'
 
 /**
  * PBR materials for the road surfaces. Textures: Poly Haven asphalt_02 and ambientCG Gravel023,
@@ -7,7 +8,7 @@ import * as THREE from 'three'
  * repeats below are "tiles per width" × "tiles per metre".
  */
 
-export const TEXTURES_URL = '/textures'
+export const TEXTURES_URL = assetUrl('/textures')
 
 const loader = new THREE.TextureLoader()
 
