@@ -103,8 +103,8 @@ function Loading({ progress }: { progress: number }) {
 
 function Start({ onStart, coarse }: { onStart: () => void; coarse: boolean }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-clerk-ink via-clerk-ink/40 to-transparent p-6 pb-10 sm:justify-center sm:pb-6">
-      <div className="pointer-events-auto flex w-full max-w-xl flex-col items-center gap-5 pt-14 text-center pop-in [@media(max-height:520px)]:gap-3 [@media(max-height:520px)]:pt-10">
+    <div className="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-clerk-ink via-clerk-ink/40 to-transparent p-6 pb-10 sm:justify-center sm:pb-6 lg:items-end lg:bg-gradient-to-l lg:pr-[7vw]">
+      <div className="pointer-events-auto flex w-full max-w-xl flex-col items-center gap-5 pt-14 text-center pop-in [@media(max-height:520px)]:gap-3 [@media(max-height:520px)]:pt-10 lg:pt-0">
         <p className="display text-base tracking-[0.35em] text-clerk-lime drop-shadow-[0_0_12px_rgba(124,255,0,0.6)] sm:text-lg [@media(max-height:520px)]:hidden">
           One lap · One van · All the cookies
         </p>
@@ -274,12 +274,14 @@ function RaceHud({ snap, coarse }: { snap: Snapshot; coarse: boolean }) {
   )
 }
 
-/** Semicircular gauge: speed arc, needle, and the boost reserve as an inner cyan arc. */
+/** Semicircular gauge on a dark plate: speed arc, ticks, needle, boost reserve as an inner arc. */
 function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
   const k = Math.min(1, kmh / MAX_KMH)
-  const R = 86
-  const cx = 110
-  const cy = 98
+  const W = 240
+  const H = 150
+  const R = 88
+  const cx = W / 2
+  const cy = 118
   const arc = (r: number, from: number, to: number) => {
     const a0 = Math.PI + from * Math.PI
     const a1 = Math.PI + to * Math.PI
@@ -291,28 +293,35 @@ function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
     return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`
   }
   const needle = Math.PI + k * Math.PI
-  const nx = cx + (R - 18) * Math.cos(needle)
-  const ny = cy + (R - 18) * Math.sin(needle)
+  const nx = cx + (R - 20) * Math.cos(needle)
+  const ny = cy + (R - 20) * Math.sin(needle)
   const boostK = Math.min(1, boost / 3)
   const ticks = Array.from({ length: 11 }, (_, i) => i / 10)
   return (
-    <div className="relative h-[172px] w-[220px]">
-      <div
-        aria-hidden
-        className="absolute inset-x-[-30px] bottom-[-20px] top-0 rounded-t-full bg-[radial-gradient(ellipse_at_50%_70%,rgba(13,13,16,0.85),rgba(13,13,16,0.35)_60%,transparent_75%)]"
-      />
-      <svg viewBox="0 0 220 172" className="absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+    <div className="relative" style={{ width: W, height: H }}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" aria-hidden>
         <title>Speed</title>
         <defs>
           <linearGradient id="speed" x1="0" x2="1">
             <stop offset="0" stopColor="#6c47ff" />
             <stop offset="1" stopColor="#7cff00" />
           </linearGradient>
+          <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="rgba(24,24,30,0.92)" />
+            <stop offset="1" stopColor="rgba(12,12,16,0.96)" />
+          </linearGradient>
         </defs>
-        <path d={arc(R, 0, 1)} stroke="rgba(0,0,0,0.65)" strokeWidth="20" fill="none" strokeLinecap="round" />
+        {/* Plate: a half disc with a flat base, so the gauge reads against any background. */}
+        <path
+          d={`M 6 ${H} A ${cx - 6} ${cx - 6} 0 0 1 ${W - 6} ${H} Z`}
+          fill="url(#plate)"
+          stroke="rgba(255,255,255,0.14)"
+          strokeWidth="2"
+        />
+        <path d={arc(R, 0, 1)} stroke="rgba(0,0,0,0.7)" strokeWidth="20" fill="none" strokeLinecap="round" />
         <path
           d={arc(R, 0, 1)}
-          stroke="rgba(255,255,255,0.12)"
+          stroke="rgba(255,255,255,0.1)"
           strokeWidth="14"
           fill="none"
           strokeLinecap="round"
@@ -324,14 +333,14 @@ function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
             strokeWidth="14"
             fill="none"
             strokeLinecap="round"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(124,255,0,0.6))' }}
+            style={{ filter: 'drop-shadow(0 0 8px rgba(124,255,0,0.55))' }}
           />
         )}
         {ticks.map((t) => {
           const a = Math.PI + t * Math.PI
           const major = Math.round(t * 10) % 5 === 0
-          const inner = R - (major ? 24 : 20)
-          const outer = R - 13
+          const inner = R - (major ? 26 : 22)
+          const outer = R - 14
           return (
             <line
               key={t}
@@ -346,7 +355,7 @@ function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
         })}
         {boostK > 0 && (
           <path
-            d={arc(R - 34, 0, boostK)}
+            d={arc(R - 36, 0, boostK)}
             stroke="#37d4ff"
             strokeWidth="6"
             fill="none"
@@ -366,14 +375,14 @@ function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
         />
         <circle cx={cx} cy={cy} r="8" fill="#131316" stroke="#fff" strokeWidth="3" />
       </svg>
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center leading-none">
-        <span className="display text-5xl font-black italic tabular-nums drop-shadow-[0_2px_0_rgba(0,0,0,0.8)]">
+      <div className="absolute inset-x-0 bottom-1 flex flex-col items-center leading-none">
+        <span className="display text-4xl font-black italic tabular-nums drop-shadow-[0_2px_0_rgba(0,0,0,0.8)]">
           {kmh}
         </span>
-        <span className="display text-xs tracking-[0.3em] text-clerk-gray">km/h</span>
+        <span className="display text-[10px] tracking-[0.3em] text-clerk-gray">km/h</span>
       </div>
       {boost > 0 && (
-        <span className="display blink absolute left-1/2 top-9 -translate-x-1/2 text-base font-extrabold tracking-[0.3em] text-boost">
+        <span className="display blink absolute left-1/2 top-[66px] -translate-x-1/2 text-sm font-extrabold tracking-[0.3em] text-boost">
           Boost
         </span>
       )}

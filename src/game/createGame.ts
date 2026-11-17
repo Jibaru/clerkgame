@@ -70,13 +70,17 @@ export function createGame(parent: HTMLElement): GameHandle {
     window.innerWidth < 760 ||
     new URLSearchParams(window.location.search).has('lite')
   const renderer = new THREE.WebGLRenderer({ antialias: !lite, powerPreference: 'high-performance' })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, lite ? 1.5 : 2))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   renderer.shadowMap.enabled = !lite
   renderer.shadowMap.type = THREE.PCFShadowMap
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.0
   renderer.domElement.style.display = 'block'
   renderer.domElement.style.touchAction = 'none'
+  // The drawing buffer is scaled by the pixel ratio; the element must stay at CSS size or a
+  // Retina screen shows only the top-left quarter of the frame.
+  renderer.domElement.style.width = '100%'
+  renderer.domElement.style.height = '100%'
   parent.appendChild(renderer.domElement)
 
   const scene = new THREE.Scene()
@@ -479,10 +483,16 @@ export function createGame(parent: HTMLElement): GameHandle {
         camera.lookAt(camOverride.look)
         camera.fov = camOverride.fov
       } else if (phase === 'ready') {
-        // Slow orbit around the parked van.
-        const a = time * 0.25
-        camPos.set(van.position.x + Math.sin(a) * 13, 4.5, van.position.z + Math.cos(a) * 13)
-        camLook.copy(van.position).setY(1.4)
+        // Slow sweep behind and beside the parked van (never ahead of it: the arch pillars
+        // stand 9 m in front of the start line).
+        const a = van.heading + Math.PI + Math.sin(time * 0.3) * 1.1
+        camPos.set(van.position.x + Math.sin(a) * 11, van.position.y + 3.6, van.position.z + Math.cos(a) * 11)
+        // Aim to the right of the van so it sits in the left half, clear of the start menu.
+        tmp.subVectors(van.position, camPos).setY(0).normalize()
+        const side = parent.clientWidth >= 1024 ? 4.5 : 0
+        camLook.copy(van.position).setY(van.position.y + 1.3)
+        camLook.x += -tmp.z * side
+        camLook.z += tmp.x * side
         camera.position.lerp(camPos, 1 - Math.exp(-dt * 2))
         camera.lookAt(camLook)
         camera.fov = THREE.MathUtils.damp(camera.fov, 45, 3, dt)
