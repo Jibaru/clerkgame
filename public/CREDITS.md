@@ -20,3 +20,13 @@
 - **textures/asphalt_02/**: "Asphalt 02" by Poly Haven (https://polyhaven.com/a/asphalt_02), CC0.
 - **textures/Grass005/**, **Ground037/**, **Rock051/**, **Gravel023/**: ambientCG
   (https://ambientcg.com), CC0. Downscaled to 512 px.
+
+## Icons (collectibles and bots, extruded in 3D at runtime)
+
+From game-icons.net, licensed CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/):
+
+- **icons/cookie.svg**: "Cookie" by Delapouite (https://game-icons.net/1x1/delapouite/cookie.html)
+- **icons/key-lock.svg**: "Key lock" by Delapouite (https://game-icons.net/1x1/delapouite/key-lock.html)
+- **icons/finger-print.svg**: "Finger print" by Delapouite (https://game-icons.net/1x1/delapouite/finger-print.html)
+- **icons/focused-lightning.svg**: "Focused lightning" by Lorc (https://game-icons.net/1x1/lorc/focused-lightning.html)
+- **icons/robot-antennas.svg**: "Robot antennas" by Delapouite (https://game-icons.net/1x1/delapouite/robot-antennas.html)

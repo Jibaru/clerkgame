@@ -17,3 +17,21 @@ body {
   color: #fff;
   -webkit-font-smoothing: antialiased;
 }
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+}
+.countdown-pop {
+  animation: countdown-pop 0.9s ease-out both;
+}
