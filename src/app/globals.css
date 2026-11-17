@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-clerk-purple: #6c47ff;
+  --color-clerk-purple-dark: #5639cc;
+  --color-clerk-lime: #7cff00;
+  --color-clerk-ink: #131316;
+  --color-clerk-gray: #747686;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--color-clerk-ink);
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
