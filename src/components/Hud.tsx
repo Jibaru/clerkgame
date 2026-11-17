@@ -33,7 +33,7 @@ export function Hud({
       {snap.phase === 'ready' && submission.restored.status !== 'idle' && (
         <RestoredToast state={submission.restored} onClose={submission.dismissRestored} />
       )}
-      {racing && <RaceHud snap={snap} />}
+      {racing && <RaceHud snap={snap} coarse={coarse} />}
       {racing && <Popups game={game} />}
       {snap.phase === 'countdown' && <Countdown value={snap.countdown} />}
       {snap.phase === 'racing' && snap.timeMs < 1200 && <Go />}
@@ -48,7 +48,7 @@ export function Hud({
         />
       )}
       {coarse && snap.phase === 'racing' && <TouchControls game={game} />}
-      {snap.phase !== 'loading' && (
+      {snap.phase !== 'loading' && !(coarse && snap.phase === 'racing') && (
         <button
           type="button"
           onClick={onToggleMute}
@@ -104,12 +104,12 @@ function Loading({ progress }: { progress: number }) {
 function Start({ onStart, coarse }: { onStart: () => void; coarse: boolean }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-clerk-ink via-clerk-ink/40 to-transparent p-6 pb-10 sm:justify-center sm:pb-6">
-      <div className="pointer-events-auto flex w-full max-w-xl flex-col items-center gap-5 text-center pop-in">
-        <p className="display text-base tracking-[0.35em] text-clerk-lime drop-shadow-[0_0_12px_rgba(124,255,0,0.6)] sm:text-lg">
+      <div className="pointer-events-auto flex w-full max-w-xl flex-col items-center gap-5 pt-14 text-center pop-in [@media(max-height:520px)]:gap-3 [@media(max-height:520px)]:pt-10">
+        <p className="display text-base tracking-[0.35em] text-clerk-lime drop-shadow-[0_0_12px_rgba(124,255,0,0.6)] sm:text-lg [@media(max-height:520px)]:hidden">
           One lap · One van · All the cookies
         </p>
-        <Title className="text-[17vmin] sm:text-[12vmin]" />
-        <Checker className="h-2.5 w-64 skew-x-[-8deg]" />
+        <Title className="text-[17vmin] sm:text-[12vmin] [@media(max-height:520px)]:text-[11vmin]" />
+        <Checker className="h-2.5 w-64 skew-x-[-8deg] [@media(max-height:520px)]:hidden" />
         <p className="display max-w-md text-balance text-lg leading-tight text-gray-200 sm:text-xl">
           Grab <span className="text-cookie">cookies</span>, <span className="text-white">API keys</span> and{' '}
           <span className="text-clerk-lime">passkeys</span>. Collect all three pieces of{' '}
@@ -203,7 +203,7 @@ const KINDS: Array<{ key: ItemKind; icon: IconName; color: string; label: string
 
 const MAX_KMH = 95
 
-function RaceHud({ snap }: { snap: Snapshot }) {
+function RaceHud({ snap, coarse }: { snap: Snapshot; coarse: boolean }) {
   const kmh = Math.round(snap.speedKmh)
   return (
     <>
@@ -249,13 +249,16 @@ function RaceHud({ snap }: { snap: Snapshot }) {
         </Panel>
       </div>
 
-      {/* Speedometer */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pop-in">
+      {/* Speedometer: smaller and lifted above the touch buttons on phones. */}
+      <div
+        className={`absolute left-1/2 -translate-x-1/2 pop-in ${coarse ? 'bottom-20 scale-[0.6]' : 'bottom-3'}`}
+        style={{ transformOrigin: '50% 100%' }}
+      >
         <Speedo kmh={kmh} boost={snap.boost} />
       </div>
 
       {/* Lap progress */}
-      <Panel className="absolute bottom-6 right-4 hidden w-56 px-3 py-2 sm:block">
+      <Panel className={`absolute bottom-6 right-4 w-56 px-3 py-2 ${coarse ? 'hidden' : 'hidden sm:block'}`}>
         <div className="display mb-1 flex justify-between text-xs tracking-[0.25em] text-clerk-gray">
           <span>Lap</span>
           <span>{Math.round(snap.lap * 100)}%</span>
@@ -616,10 +619,11 @@ function TouchControls({ game }: { game: GameHandle }) {
       push()
     },
   })
-  const cls = 'btn-race btn-ghost pointer-events-auto flex h-16 w-16 items-center justify-center text-3xl'
+  const cls =
+    'btn-race btn-ghost pointer-events-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center bg-black/55 text-3xl'
   return (
     <>
-      <div className="absolute bottom-6 left-5 flex gap-3">
+      <div className="absolute bottom-4 left-4 flex gap-3">
         <button type="button" aria-label="Steer left" className={cls} {...bind('left')}>
           <span>◀</span>
         </button>
