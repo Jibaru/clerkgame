@@ -30,3 +30,11 @@ From game-icons.net, licensed CC BY 3.0 (https://creativecommons.org/licenses/by
 - **icons/finger-print.svg**: "Finger print" by Delapouite (https://game-icons.net/1x1/delapouite/finger-print.html)
 - **icons/focused-lightning.svg**: "Focused lightning" by Lorc (https://game-icons.net/1x1/lorc/focused-lightning.html)
 - **icons/robot-antennas.svg**: "Robot antennas" by Delapouite (https://game-icons.net/1x1/delapouite/robot-antennas.html)
+
+## Music
+
+- **audio/title.mp3**, **audio/race.mp3**, **audio/ending.mp3**: "Title Screen", "Level 1" and
+  "Ending" from "5 Action Chiptunes" by Juhani Junkala (https://opengameart.org/content/5-chiptunes-action),
+  CC0. Re-encoded from WAV to MP3.
+- Sound effects (engine, tyres, pickups, hits, countdown, fanfare) are synthesized at runtime
+  with the Web Audio API; no third-party samples.

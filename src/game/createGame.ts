@@ -37,6 +37,8 @@ export type Snapshot = {
   signin: [boolean, boolean, boolean]
   result: RunResult | null
   lite: boolean
+  /** Last throttle input, for the engine sound. */
+  throttle: number
 }
 
 export type GameEvent =
@@ -117,6 +119,7 @@ export function createGame(parent: HTMLElement): GameHandle {
   let prevU = 0
   let offroad = false
   let shake = 0
+  let lastThrottle = 0
   /** Dev only: a fixed camera for screenshots, set through window.__game.view(). */
   let camOverride: { pos: THREE.Vector3; look: THREE.Vector3 } | null = null
   const touch: TouchInput = { throttle: 0, steer: 0, brake: false }
@@ -150,6 +153,7 @@ export function createGame(parent: HTMLElement): GameHandle {
     signin: [collected.signin_open > 0, collected.signin_name > 0, collected.signin_close > 0],
     result,
     lite,
+    throttle: lastThrottle,
   })
   const publish = (force = false) => {
     const now = performance.now()
@@ -424,6 +428,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       }
 
       const steerScale = THREE.MathUtils.clamp(Math.abs(van.speed) / 3, 0.25, 1)
+      lastThrottle = throttle
       van.update(dt, throttle, steer * steerScale * Math.sign(van.speed || 1), brake)
       collide(dt)
 

@@ -12,18 +12,42 @@ function fmt(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`
 }
 
-export function Hud({ game, snap }: { game: GameHandle; snap: Snapshot }) {
+export function Hud({
+  game,
+  snap,
+  muted,
+  onToggleMute,
+  onStart,
+}: {
+  game: GameHandle
+  snap: Snapshot
+  muted: boolean
+  onToggleMute: () => void
+  onStart: () => void
+}) {
   const coarse = useCoarsePointer()
   return (
     <div className="pointer-events-none absolute inset-0 select-none text-white">
       {snap.phase === 'loading' && <Loading progress={snap.progress} />}
-      {snap.phase === 'ready' && <Start onStart={game.start} coarse={coarse} />}
+      {snap.phase === 'ready' && <Start onStart={onStart} coarse={coarse} />}
       {(snap.phase === 'countdown' || snap.phase === 'racing' || snap.phase === 'finished') && (
         <RaceHud snap={snap} />
       )}
       {snap.phase === 'countdown' && <Countdown value={snap.countdown} />}
       {snap.phase === 'finished' && snap.result && <Finished snap={snap} onRetry={game.restart} />}
       {coarse && snap.phase === 'racing' && <TouchControls game={game} />}
+      {snap.phase !== 'loading' && (
+        <button
+          type="button"
+          onClick={onToggleMute}
+          aria-pressed={muted}
+          aria-label={muted ? 'Unmute' : 'Mute'}
+          title={muted ? 'Unmute (M)' : 'Mute (M)'}
+          className="pointer-events-auto absolute right-4 bottom-5 flex size-9 items-center justify-center rounded-full bg-clerk-ink/70 text-sm ring-1 ring-white/10 backdrop-blur hover:bg-clerk-ink/90 sm:bottom-auto sm:top-40"
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
+      )}
     </div>
   )
 }
@@ -150,7 +174,7 @@ function RaceHud({ snap }: { snap: Snapshot }) {
           {Math.round(snap.speedKmh)} <span className="text-sm text-clerk-gray">km/h</span>
         </span>
       </div>
-      <div className="absolute bottom-5 right-4 hidden h-1.5 w-40 overflow-hidden rounded-full bg-white/10 sm:block">
+      <div className="absolute bottom-5 right-16 hidden h-1.5 w-40 overflow-hidden rounded-full bg-white/10 sm:block">
         <div className="h-full bg-clerk-lime" style={{ width: `${Math.round(snap.lap * 100)}%` }} />
       </div>
     </>
