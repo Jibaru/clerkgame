@@ -369,13 +369,22 @@ export function createGame(parent: HTMLElement): GameHandle {
   // ------------------------------------------------------------------------------------ loop
   const timer = new THREE.Timer()
   let raf = 0
+  /** Dev only: drive the lap automatically, and run several simulation steps per frame. */
+  const dev = { autopilot: false, turbo: 1 }
+  let simTime = 0
   const tick = () => {
     if (disposed) return
     raf = requestAnimationFrame(tick)
     timer.update()
     const dt = Math.min(timer.getDelta(), 0.05)
-    const time = timer.getElapsed()
-
+    for (let i = 0; i < dev.turbo; i++) {
+      simTime += dt
+      step(dt, simTime)
+    }
+    renderer.render(scene, camera)
+    publish()
+  }
+  const step = (dt: number, time: number) => {
     if (phase === 'countdown') {
       countdown -= dt
       const n = Math.ceil(countdown)
@@ -406,6 +415,16 @@ export function createGame(parent: HTMLElement): GameHandle {
         throttle = THREE.MathUtils.clamp(throttle + touch.throttle, -1, 1)
         steer = THREE.MathUtils.clamp(steer + touch.steer, -1, 1)
         brake = brake || touch.brake
+        if (dev.autopilot) {
+          // Chase a point 14 m ahead on the centreline.
+          const here = track.nearest(van.position)
+          const target = track.at(here.u + 14 / track.length).point
+          let diff = Math.atan2(target.x - van.position.x, target.z - van.position.z) - van.heading
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff))
+          steer = THREE.MathUtils.clamp(diff * 2, -1, 1)
+          throttle = 1
+          brake = false
+        }
       } else if (phase === 'countdown') {
         brake = true
       } else if (phase === 'finished') {
@@ -496,8 +515,6 @@ export function createGame(parent: HTMLElement): GameHandle {
 
     updateBurst(dt)
     world.update(time)
-    renderer.render(scene, camera)
-    publish()
   }
 
   // ------------------------------------------------------------------------------------ loading
@@ -566,6 +583,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       freeCamera: () => {
         camOverride = null
       },
+      dev,
     }
   }
 
