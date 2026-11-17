@@ -58,7 +58,13 @@ export function buildWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer, op
     return -1.6 * t
   }
 
-  const env = buildEnvironment(scene, track, renderer, carve)
+  // The sky waits for the props (and so for the van, which loads first): on a slow link the
+  // start screen appears sooner and the HDRI pops in behind it.
+  let propsReady: () => void = () => undefined
+  const propsDone = new Promise<void>((resolve) => {
+    propsReady = resolve
+  })
+  const env = buildEnvironment(scene, track, renderer, carve, propsDone)
   const roadMats = createRoadMaterials()
 
   // --- Road: gravel shoulder under PBR asphalt, painted markings floating just above. -------
@@ -96,7 +102,9 @@ export function buildWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer, op
     buildStartArea(root, track, obstacles),
     placeBarriers(root, track),
     placeLamps(root, track),
-  ]).then(() => undefined)
+  ]).then(() => {
+    propsReady()
+  })
 
   // --- Vegetation keeps clear of everything built above. -------------------------------------
   const probe = new THREE.Vector3()

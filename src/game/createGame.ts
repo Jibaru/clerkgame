@@ -121,7 +121,7 @@ export function createGame(parent: HTMLElement): GameHandle {
   let shake = 0
   let lastThrottle = 0
   /** Dev only: a fixed camera for screenshots, set through window.__game.view(). */
-  let camOverride: { pos: THREE.Vector3; look: THREE.Vector3 } | null = null
+  let camOverride: { pos: THREE.Vector3; look: THREE.Vector3; fov: number } | null = null
   const touch: TouchInput = { throttle: 0, steer: 0, brake: false }
   const keys = new Set<string>()
   const listeners = new Set<(s: Snapshot) => void>()
@@ -477,7 +477,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       if (camOverride) {
         camera.position.copy(camOverride.pos)
         camera.lookAt(camOverride.look)
-        camera.fov = 50
+        camera.fov = camOverride.fov
       } else if (phase === 'ready') {
         // Slow orbit around the parked van.
         const a = time * 0.25
@@ -573,17 +573,35 @@ export function createGame(parent: HTMLElement): GameHandle {
         phase = p
       },
       /** Park the van at u and look at it from (lateral, height, back) metres away. */
-      view: (u: number, lateral: number, height: number, back: number, lookAhead = 0) => {
+      view: (
+        u: number,
+        lateral: number,
+        height: number,
+        back: number,
+        lookAhead = 0,
+        fov = 50,
+        lookUp = 1.5,
+      ) => {
         const s = track.at(u)
         van?.teleport(s.point.clone(), Math.atan2(s.tangent.x, s.tangent.z))
         const pos = s.point.clone().addScaledVector(s.normal, lateral).addScaledVector(s.tangent, -back)
         pos.y += height
         const look = track.at(u + lookAhead / track.length).point.clone()
-        look.y += 1.5
-        camOverride = { pos, look }
+        look.y += lookUp
+        camOverride = { pos, look, fov }
       },
       freeCamera: () => {
         camOverride = null
+      },
+      /** Hide the pickups within r metres of the van (clean framing for screenshots). */
+      clearItemsNear: (r: number) => {
+        if (!van || !collectibles) return
+        for (const c of collectibles.all) {
+          if (c.position.distanceTo(van.position) < r) {
+            c.taken = true
+            c.mesh.visible = false
+          }
+        }
       },
       dev,
     }

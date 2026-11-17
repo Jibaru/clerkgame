@@ -502,6 +502,8 @@ export function buildEnvironment(
   track: Track,
   renderer: THREE.WebGLRenderer,
   carve: Carve = () => 0,
+  /** The HDRI download starts once this resolves, so it never competes with the van. */
+  skyAfter: Promise<unknown> = Promise.resolve(),
 ): Environment {
   const field = buildHeightField(track, carve)
   const { mesh: terrain, textures } = buildTerrain(field)
@@ -518,7 +520,8 @@ export function buildEnvironment(
   let sky: SkyResult | null = null
   let disposed = false
 
-  const ready = loadSky(renderer)
+  const ready = skyAfter
+    .then(() => loadSky(renderer))
     .then((result) => {
       if (disposed) {
         result.background.dispose()

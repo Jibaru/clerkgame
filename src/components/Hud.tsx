@@ -24,7 +24,7 @@ export function Hud({
   const coarse = useCoarsePointer()
   const submission = useRunSubmission()
   return (
-    <div className="pointer-events-none absolute inset-0 select-none text-white">
+    <div id="hud" className="pointer-events-none absolute inset-0 select-none text-white">
       {snap.phase === 'loading' && <Loading progress={snap.progress} />}
       {(snap.phase === 'ready' || snap.phase === 'finished') && <TopBar />}
       {snap.phase === 'ready' && <Start onStart={onStart} coarse={coarse} />}
