@@ -25,7 +25,7 @@ pnpm dev
 
 ## Play
 
-WASD or arrows, Space to brake, R to restart, M to mute. On phones: touch buttons.
+WASD or arrows, Space/Shift to drift (release for a mini-turbo), X to brake, R to restart, M to mute. On phones: touch buttons.
 Score = items (cookie 10, API key 50, passkey 100) × 1.5 when the three `<SignIn/>` pieces are
 collected, plus 5 points per second under 2:00. Spam bots steal 3 cookies on contact.
 

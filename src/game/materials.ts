@@ -1,28 +1,9 @@
 import * as THREE from 'three'
-import { assetUrl } from './assets'
 
 /**
- * PBR materials for the road surfaces. Textures: Poly Haven asphalt_02 and ambientCG Gravel023,
- * both CC0, downscaled to 512 px (see public/models/CREDITS.md). The road ribbon from
- * Track.buildRibbon has u ∈ [0, 1] across its width and v in metres along its length, so the
- * repeats below are "tiles per width" × "tiles per metre".
+ * Stylised road surfaces: flat dark asphalt with a faint speckle, crisp painted markings, warm
+ * gravel for the shortcut. Everything is drawn on canvases, so there is nothing to download.
  */
-
-export const TEXTURES_URL = assetUrl('/textures')
-
-const loader = new THREE.TextureLoader()
-
-/** Load a tiling texture; colour maps are sRGB, data maps (normal, roughness, arm) stay linear. */
-export function loadTiling(url: string, srgb: boolean, repeatX = 1, repeatY = 1): THREE.Texture {
-  const tex = loader.load(url)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  tex.anisotropy = 8
-  tex.repeat.set(repeatX, repeatY)
-  if (srgb) tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
 export type RoadMaterials = {
   asphalt: THREE.MeshStandardMaterial
   markings: THREE.MeshBasicMaterial
@@ -30,33 +11,45 @@ export type RoadMaterials = {
   gravel: THREE.MeshStandardMaterial
 }
 
-/** Road width the markings canvas is drawn for, in metres. Must match track.ROAD_W. */
 const ROAD_WIDTH = 10
-/** Dash period: 3 m painted, 6 m gap. */
 const DASH_PERIOD = 9
 
-export function createRoadMaterials(): RoadMaterials {
-  // Asphalt: one square tile per 10 m of width, so 1/10 of a tile per metre of length.
-  const asphaltRepeat: [number, number] = [1, 1 / ROAD_WIDTH]
-  const diff = loadTiling(`${TEXTURES_URL}/asphalt_02/asphalt_02_diff_1k.jpg`, true, ...asphaltRepeat)
-  const nor = loadTiling(`${TEXTURES_URL}/asphalt_02/asphalt_02_nor_gl_1k.jpg`, false, ...asphaltRepeat)
-  const arm = loadTiling(`${TEXTURES_URL}/asphalt_02/asphalt_02_arm_1k.jpg`, false, ...asphaltRepeat)
-  // aoMap reads uv channel 1 by default; the ribbon only has channel 0.
-  arm.channel = 0
-  const asphalt = new THREE.MeshStandardMaterial({
-    map: diff,
-    normalMap: nor,
-    normalScale: new THREE.Vector2(0.8, 0.8),
-    aoMap: arm,
-    aoMapIntensity: 0.8,
-    roughnessMap: arm,
-    metalnessMap: arm,
-    roughness: 1,
-    metalness: 1,
-    color: new THREE.Color(0x8c8c8c),
-    envMapIntensity: 0.35,
-  })
+function speckle(base: string, dots: string[], size = 256, density = 900): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = size
+  c.height = size
+  const ctx = c.getContext('2d') as CanvasRenderingContext2D
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, size, size)
+  let seed = 3
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0
+    return seed / 4294967296
+  }
+  for (let i = 0; i < density; i++) {
+    ctx.fillStyle = dots[Math.floor(rand() * dots.length)] ?? dots[0] ?? '#000'
+    const r = 1 + rand() * 2.5
+    ctx.beginPath()
+    ctx.arc(rand() * size, rand() * size, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  const tex = new THREE.CanvasTexture(c)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = 4
+  return tex
+}
 
+export function createRoadMaterials(): RoadMaterials {
+  const asphaltTex = speckle('#3b3b46', ['#454552', '#33333d', '#4a4a58'])
+  asphaltTex.repeat.set(1, 1 / ROAD_WIDTH)
+  const asphalt = new THREE.MeshStandardMaterial({
+    map: asphaltTex,
+    roughness: 0.92,
+    metalness: 0,
+    envMapIntensity: 0.25,
+  })
   const markings = new THREE.MeshBasicMaterial({
     map: makeMarkingsTexture(),
     transparent: true,
@@ -64,55 +57,27 @@ export function createRoadMaterials(): RoadMaterials {
     polygonOffset: true,
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
-    toneMapped: true,
   })
-
-  // Gravel shoulder: the ribbon is ROAD_W + 2.4 m wide, tile every ~3 m.
-  const shoulderW = ROAD_WIDTH + 2.4
-  const shoulderRepeat: [number, number] = [shoulderW / 3, 1 / 3]
+  const shoulderTex = speckle('#d9d2bf', ['#cfc6b0', '#e4ddc9', '#c4bca6'], 128, 300)
+  shoulderTex.repeat.set((ROAD_WIDTH + 2.4) / 3, 1 / 3)
   const shoulder = new THREE.MeshStandardMaterial({
-    map: loadTiling(`${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_Color.jpg`, true, ...shoulderRepeat),
-    normalMap: loadTiling(
-      `${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_NormalGL.jpg`,
-      false,
-      ...shoulderRepeat,
-    ),
-    normalScale: new THREE.Vector2(0.7, 0.7),
-    roughnessMap: loadTiling(
-      `${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_Roughness.jpg`,
-      false,
-      ...shoulderRepeat,
-    ),
+    map: shoulderTex,
     roughness: 1,
     metalness: 0,
-    color: new THREE.Color(0xb9b2a6),
-    envMapIntensity: 0.4,
+    envMapIntensity: 0.2,
   })
-
-  // The shortcut ribbon is SHORTCUT_W (6 m) wide with v in metres: tile every 3 m.
-  const gravelRepeat: [number, number] = [2, 1 / 3]
+  const gravelTex = speckle('#d8b98a', ['#c9a876', '#e3c79c', '#bf9d6c'], 128, 400)
+  gravelTex.repeat.set(2, 1 / 3)
   const gravel = new THREE.MeshStandardMaterial({
-    map: loadTiling(`${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_Color.jpg`, true, ...gravelRepeat),
-    normalMap: loadTiling(`${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_NormalGL.jpg`, false, ...gravelRepeat),
-    normalScale: new THREE.Vector2(0.7, 0.7),
-    roughnessMap: loadTiling(
-      `${TEXTURES_URL}/Gravel023/Gravel023_1K-JPG_Roughness.jpg`,
-      false,
-      ...gravelRepeat,
-    ),
+    map: gravelTex,
     roughness: 1,
     metalness: 0,
-    color: new THREE.Color(0xcfc8bc),
-    envMapIntensity: 0.4,
+    envMapIntensity: 0.2,
   })
-
   return { asphalt, markings, shoulder, gravel }
 }
 
-/**
- * Painted lines on a transparent tile covering ROAD_WIDTH m across × DASH_PERIOD m along:
- * two white edge lines and a dashed centre line, with worn patches so they look painted.
- */
+/** Two white edge lines and a dashed centre line per DASH_PERIOD metres of road. */
 function makeMarkingsTexture(): THREE.CanvasTexture {
   const w = 512
   const h = Math.round((w * DASH_PERIOD) / ROAD_WIDTH)
@@ -122,35 +87,14 @@ function makeMarkingsTexture(): THREE.CanvasTexture {
   canvas.height = h
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
   ctx.clearRect(0, 0, w, h)
-
-  const lineW = Math.max(3, Math.round(0.12 * pxPerM))
+  const lineW = Math.max(4, Math.round(0.16 * pxPerM))
   const inset = Math.round(0.35 * pxPerM)
-  ctx.fillStyle = 'rgba(236,236,230,0.92)'
+  ctx.fillStyle = 'rgba(248,248,252,0.95)'
   ctx.fillRect(inset, 0, lineW, h)
   ctx.fillRect(w - inset - lineW, 0, lineW, h)
-
-  // Centre dash: 3 m painted then 6 m gap, slightly warm.
-  ctx.fillStyle = 'rgba(240,228,176,0.95)'
-  const dashW = Math.max(3, Math.round(0.14 * pxPerM))
-  ctx.fillRect(Math.round(w / 2 - dashW / 2), Math.round(0.2 * pxPerM), dashW, Math.round(3 * pxPerM))
-
-  // Wear: knock out random specks so the paint is not perfectly solid.
-  const img = ctx.getImageData(0, 0, w, h)
-  const d = img.data
-  let seed = 7
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0
-    return seed / 4294967296
-  }
-  for (let i = 3; i < d.length; i += 4) {
-    const a = d[i] ?? 0
-    if (a === 0) continue
-    const r = rand()
-    if (r < 0.08) d[i] = 0
-    else if (r < 0.3) d[i] = Math.round(a * (0.55 + rand() * 0.4))
-  }
-  ctx.putImageData(img, 0, 0)
-
+  ctx.fillStyle = 'rgba(255,224,110,0.95)'
+  const dashW = Math.max(4, Math.round(0.18 * pxPerM))
+  ctx.fillRect(Math.round(w / 2 - dashW / 2), Math.round(0.2 * pxPerM), dashW, Math.round(3.2 * pxPerM))
   const tex = new THREE.CanvasTexture(canvas)
   tex.wrapS = THREE.ClampToEdgeWrapping
   tex.wrapT = THREE.RepeatWrapping

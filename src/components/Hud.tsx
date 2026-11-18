@@ -116,14 +116,14 @@ function Start({ onStart, coarse }: { onStart: () => void; coarse: boolean }) {
           <code className="rounded bg-clerk-purple/40 px-1.5 font-mono text-[0.8em] normal-case text-white">
             &lt;SignIn/&gt;
           </code>{' '}
-          for x1.5. Dodge the spam bots.
+          for x1.5. Hold <span className="text-boost">drift</span> through corners and let go for a turbo.
         </p>
         <RaceButton onClick={onStart} className="pulse-glow h-16 w-full max-w-sm text-3xl">
           Start the run
         </RaceButton>
         <p className="display flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm tracking-wider text-clerk-gray">
           {coarse ? (
-            'Steer on the left · gas and brake on the right'
+            'Steer left · gas and drift right · let go of drift for a turbo'
           ) : (
             <>
               <span>
@@ -131,7 +131,10 @@ function Start({ onStart, coarse }: { onStart: () => void; coarse: boolean }) {
                 <kbd className="keycap">S</kbd> <kbd className="keycap">D</kbd> drive
               </span>
               <span>
-                <kbd className="keycap">Space</kbd> brake
+                <kbd className="keycap">Space</kbd> drift
+              </span>
+              <span>
+                <kbd className="keycap">X</kbd> brake
               </span>
               <span>
                 <kbd className="keycap">R</kbd> restart
@@ -255,6 +258,7 @@ function RaceHud({ snap, coarse }: { snap: Snapshot; coarse: boolean }) {
         style={{ transformOrigin: '50% 100%' }}
       >
         <Speedo kmh={kmh} boost={snap.boost} />
+        {snap.drifting && <DriftMeter time={snap.driftTime} tier={snap.driftTier} />}
       </div>
 
       {/* Lap progress */}
@@ -271,6 +275,35 @@ function RaceHud({ snap, coarse }: { snap: Snapshot; coarse: boolean }) {
         </div>
       </Panel>
     </>
+  )
+}
+
+const DRIFT_TIERS = [0.7, 1.6, 2.6]
+const DRIFT_COLORS = ['bg-boost', 'bg-[#ffa531]', 'bg-clerk-purple']
+
+/** Drift charge: three segments that fill with the mini-turbo colours. */
+function DriftMeter({ time, tier }: { time: number; tier: number }) {
+  return (
+    <div className="absolute -top-9 left-1/2 flex -translate-x-1/2 items-center gap-1">
+      <span className="display mr-1 text-xs font-extrabold tracking-[0.25em] text-white drop-shadow-[0_1px_0_#000]">
+        Drift
+      </span>
+      {DRIFT_TIERS.map((t, i) => {
+        const prev = DRIFT_TIERS[i - 1] ?? 0
+        const fill = Math.min(1, Math.max(0, (time - prev) / (t - prev)))
+        return (
+          <span
+            key={t}
+            className="h-2.5 w-9 skew-x-[-12deg] overflow-hidden rounded-sm bg-black/60 ring-1 ring-white/20"
+          >
+            <span
+              className={`block h-full ${DRIFT_COLORS[i]} ${tier > i ? 'shadow-[0_0_10px_currentColor]' : ''}`}
+              style={{ width: `${Math.round(fill * 100)}%` }}
+            />
+          </span>
+        )
+      })}
+    </div>
   )
 }
 
@@ -416,6 +449,12 @@ function Popups({ game }: { game: GameHandle }) {
           }
       } else if (e.type === 'hit') {
         p = { text: 'Spam! -3', icon: 'robot-antennas', color: 'text-bot' }
+      } else if (e.type === 'turbo') {
+        p = {
+          text: e.tier >= 3 ? 'Ultra turbo!' : e.tier === 2 ? 'Super turbo!' : 'Mini turbo!',
+          icon: 'focused-lightning',
+          color: e.tier >= 3 ? 'text-clerk-purple' : e.tier === 2 ? 'text-[#ffa531]' : 'text-boost',
+        }
       }
       if (!p) return
       const id = ++seq.current
@@ -603,16 +642,17 @@ function RestoredToast({
 // ---------------------------------------------------------------------------------- touch
 
 function TouchControls({ game }: { game: GameHandle }) {
-  const state = useRef({ left: false, right: false, gas: false, brake: false })
+  const state = useRef({ left: false, right: false, gas: false, drift: false })
   const push = () => {
     const s = state.current
     game.setTouch({
       throttle: s.gas ? 1 : 0,
       steer: (s.left ? 1 : 0) - (s.right ? 1 : 0),
-      brake: s.brake,
+      brake: false,
+      drift: s.drift,
     })
   }
-  useEffect(() => () => game.setTouch({ throttle: 0, steer: 0, brake: false }), [game])
+  useEffect(() => () => game.setTouch({ throttle: 0, steer: 0, brake: false, drift: false }), [game])
   const bind = (key: keyof typeof state.current) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -641,8 +681,8 @@ function TouchControls({ game }: { game: GameHandle }) {
         </button>
       </div>
       <div className="absolute bottom-6 right-5 flex items-end gap-3">
-        <button type="button" aria-label="Brake" className={`${cls} text-bot`} {...bind('brake')}>
-          <span>■</span>
+        <button type="button" aria-label="Drift" className={`${cls} text-boost`} {...bind('drift')}>
+          <span className="display text-base font-extrabold">DRIFT</span>
         </button>
         <button
           type="button"

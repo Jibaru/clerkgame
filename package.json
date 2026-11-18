@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.17",
-    "@dgreenheck/ez-tree": "1.1.0",
     "next": "16.4.6",
     "postgres": "3.4.8",
     "react": "19.3.1",

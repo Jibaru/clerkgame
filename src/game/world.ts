@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { buildEnvironment, type Environment } from './environment'
 import { loadKitModel } from './kits'
-import { createRoadMaterials, loadTiling, TEXTURES_URL } from './materials'
+import { createRoadMaterials } from './materials'
 import { buildRibbon, ROAD_W, SHORTCUT_W, SHOULDER_W, Shortcut, Track, type TrackSample } from './track'
 import type { Blocked } from './vegetation'
 
@@ -156,15 +156,16 @@ function segmentDistance(px: number, pz: number, a: THREE.Vector3, b: THREE.Vect
   return Math.hypot(px - (a.x + abx * t), pz - (a.z + abz * t))
 }
 
-function rockMaterial(repeatU: number, repeatV: number, color: number): THREE.MeshStandardMaterial {
+/** Flat-shaded stone in the valley palette; the uv repeats are kept for call compatibility. */
+function rockMaterial(_repeatU: number, _repeatV: number, color: number): THREE.MeshStandardMaterial {
+  void _repeatU
+  void _repeatV
   return new THREE.MeshStandardMaterial({
-    map: loadTiling(`${TEXTURES_URL}/Rock051/Rock051_1K-JPG_Color.jpg`, true, repeatU, repeatV),
-    normalMap: loadTiling(`${TEXTURES_URL}/Rock051/Rock051_1K-JPG_NormalGL.jpg`, false, repeatU, repeatV),
-    roughnessMap: loadTiling(`${TEXTURES_URL}/Rock051/Rock051_1K-JPG_Roughness.jpg`, false, repeatU, repeatV),
-    roughness: 1,
-    metalness: 0,
     color,
-    envMapIntensity: 0.5,
+    flatShading: true,
+    roughness: 0.95,
+    metalness: 0,
+    envMapIntensity: 0.3,
   })
 }
 
@@ -232,9 +233,12 @@ function buildTunnel(track: Track): THREE.Group {
   const sample = (u: number) => track.at(u)
   const { u0, u1, halfWidth, height } = TUNNEL
   // Inner arch, seen from inside.
+  const innerMat = rockMaterial(1, 2, 0x6b6d82)
+  innerMat.emissive = new THREE.Color(0x2a2b3a)
+  innerMat.emissiveIntensity = 0.8
   const inner = new THREE.Mesh(
     buildTube(sample, u0, u1, (a) => [Math.cos(a) * halfWidth, Math.sin(a) * height], true, 48, 16),
-    rockMaterial(1, 2, 0x5a5856),
+    innerMat,
   )
   inner.receiveShadow = true
   g.add(inner)
@@ -256,7 +260,7 @@ function buildTunnel(track: Track): THREE.Group {
       taper,
       0.06,
     ),
-    rockMaterial(1, 3, 0x8d8a84),
+    rockMaterial(1, 3, 0x9d9eb5),
   )
   outer.castShadow = true
   outer.receiveShadow = true
@@ -266,7 +270,7 @@ function buildTunnel(track: Track): THREE.Group {
     const { point, tangent, normal } = track.at(u)
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(halfWidth * 1.02, halfWidth * 1.35, 24, 1, 0, Math.PI),
-      rockMaterial(2, 2, 0x6e6b66),
+      rockMaterial(2, 2, 0x84869c),
     )
     ring.position.copy(point).setY(point.y - 0.3)
     ring.lookAt(point.clone().add(tangent))
@@ -291,6 +295,12 @@ function buildTunnel(track: Track): THREE.Group {
     lamp.position.copy(point).setY(height - 0.45)
     lamp.lookAt(point.clone().add(tangent))
     g.add(lamp)
+    // Every other lamp also casts warm light on the road below.
+    if (i % 2 === 0) {
+      const light = new THREE.PointLight(0xffd27a, 40, 26, 1.6)
+      light.position.copy(point).setY(height - 1.2)
+      g.add(light)
+    }
   }
   return g
 }
@@ -301,7 +311,7 @@ function buildBridge(track: Track): THREE.Group {
   const u0 = BRIDGE.u - BRIDGE.half
   const u1 = BRIDGE.u + BRIDGE.half
   const sample = (u: number) => track.at(u)
-  const stone = rockMaterial(1, 1, 0x9a948a)
+  const stone = rockMaterial(1, 1, 0xb9b3c9)
   stone.side = THREE.DoubleSide
   // Side walls from the deck down to the ground, 0.9 m parapet on top.
   for (const side of [1, -1]) {
@@ -359,12 +369,12 @@ function buildWater(stream: World['stream']): { mesh: THREE.Mesh; update: (t: nu
   const geo = new THREE.PlaneGeometry(len, stream.half * 2 - 1, 1, 1)
   geo.rotateX(-Math.PI / 2)
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x2f86b8,
+    color: 0x3fa9f5,
     transparent: true,
-    opacity: 0.72,
-    roughness: 0.12,
-    metalness: 0.1,
-    envMapIntensity: 1.2,
+    opacity: 0.85,
+    roughness: 0.25,
+    metalness: 0,
+    envMapIntensity: 0.8,
   })
   const mesh = new THREE.Mesh(geo, mat)
   mesh.position.copy(stream.a).add(stream.b).multiplyScalar(0.5).setY(-0.55)
@@ -589,7 +599,7 @@ async function buildClerkHQ(root: THREE.Group, track: Track, obstacles: Obstacle
   // Plaza in front of the tower and the sign.
   const plaza = new THREE.Mesh(
     new THREE.PlaneGeometry(60, 22),
-    new THREE.MeshStandardMaterial({ color: 0xd7d5d0, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: 0xe8e4f4, roughness: 0.9 }),
   )
   plaza.rotateX(-Math.PI / 2)
   plaza.position

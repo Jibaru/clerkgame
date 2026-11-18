@@ -39,17 +39,23 @@ export type Snapshot = {
   lite: boolean
   /** Last throttle input, for the engine sound. */
   throttle: number
+  drifting: boolean
+  driftTier: number
+  /** Seconds in the current drift. */
+  driftTime: number
 }
 
 export type GameEvent =
   | { type: 'pickup'; kind: ItemKind }
   | { type: 'hit' }
+  | { type: 'drift'; on: boolean }
+  | { type: 'turbo'; tier: number }
   | { type: 'countdown'; n: number }
   | { type: 'go' }
   | { type: 'finish' }
   | { type: 'offroad'; on: boolean }
 
-export type TouchInput = { throttle: number; steer: number; brake: boolean }
+export type TouchInput = { throttle: number; steer: number; brake: boolean; drift: boolean }
 
 export type GameHandle = {
   start: () => void
@@ -126,7 +132,10 @@ export function createGame(parent: HTMLElement): GameHandle {
   let lastThrottle = 0
   /** Dev only: a fixed camera for screenshots, set through window.__game.view(). */
   let camOverride: { pos: THREE.Vector3; look: THREE.Vector3; fov: number } | null = null
-  const touch: TouchInput = { throttle: 0, steer: 0, brake: false }
+  const touch: TouchInput = { throttle: 0, steer: 0, brake: false, drift: false }
+  let driftHeld = false
+  let wasDrifting = false
+  let sparkTimer = 0
   const keys = new Set<string>()
   const listeners = new Set<(s: Snapshot) => void>()
   const eventListeners = new Set<(e: GameEvent) => void>()
@@ -161,6 +170,9 @@ export function createGame(parent: HTMLElement): GameHandle {
     result,
     lite,
     throttle: lastThrottle,
+    drifting: van?.drift.active ?? false,
+    driftTier: van?.drift.tier ?? 0,
+    driftTime: van?.drift.time ?? 0,
   })
   const publish = (force = false) => {
     const now = performance.now()
@@ -177,7 +189,7 @@ export function createGame(parent: HTMLElement): GameHandle {
   const burstGeo = new THREE.PlaneGeometry(0.35, 0.35)
   const burst: Array<{ mesh: THREE.Mesh; vel: THREE.Vector3; life: number }> = []
   const burstMats = new Map<number, THREE.MeshBasicMaterial>()
-  const spawnBurst = (at: THREE.Vector3, color: number) => {
+  const spawnBurst = (at: THREE.Vector3, color: number, count = 10, energy = 4) => {
     let mat = burstMats.get(color)
     if (!mat) {
       mat = new THREE.MeshBasicMaterial({
@@ -188,15 +200,15 @@ export function createGame(parent: HTMLElement): GameHandle {
       })
       burstMats.set(color, mat)
     }
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < count; i++) {
       const mesh = new THREE.Mesh(burstGeo, mat)
       mesh.position.copy(at)
       scene.add(mesh)
       const a = Math.random() * Math.PI * 2
       burst.push({
         mesh,
-        vel: new THREE.Vector3(Math.cos(a) * 4, 3 + Math.random() * 4, Math.sin(a) * 4),
-        life: 0.6 + Math.random() * 0.3,
+        vel: new THREE.Vector3(Math.cos(a) * energy, 2 + Math.random() * energy, Math.sin(a) * energy),
+        life: 0.35 + Math.random() * 0.35,
       })
     }
   }
@@ -293,7 +305,19 @@ export function createGame(parent: HTMLElement): GameHandle {
   ro.observe(parent)
   resize()
 
-  const DRIVE_KEYS = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ']
+  const DRIVE_KEYS = [
+    'w',
+    'a',
+    's',
+    'd',
+    'arrowup',
+    'arrowdown',
+    'arrowleft',
+    'arrowright',
+    ' ',
+    'shift',
+    'x',
+  ]
   const onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase()
     if (DRIVE_KEYS.includes(k)) {
@@ -418,10 +442,29 @@ export function createGame(parent: HTMLElement): GameHandle {
         if (keys.has('s') || keys.has('arrowdown')) throttle -= 1
         if (keys.has('a') || keys.has('arrowleft')) steer += 1
         if (keys.has('d') || keys.has('arrowright')) steer -= 1
-        if (keys.has(' ')) brake = true
+        if (keys.has('x')) brake = true
         throttle = THREE.MathUtils.clamp(throttle + touch.throttle, -1, 1)
         steer = THREE.MathUtils.clamp(steer + touch.steer, -1, 1)
         brake = brake || touch.brake
+        // Space / Shift (or the touch drift button): hold to drift, release for the mini-turbo.
+        const wantDrift = keys.has(' ') || keys.has('shift') || touch.drift
+        if (wantDrift && !van.drift.active && Math.abs(steer) > 0.2 && van.speed > 7) {
+          if (van.startDrift(steer)) emit({ type: 'drift', on: true })
+        } else if (!wantDrift && driftHeld && van.drift.active) {
+          const tier = van.endDrift()
+          if (tier > 0) {
+            emit({ type: 'turbo', tier })
+            spawnBurst(
+              van.position.clone().setY(0.6),
+              tier >= 3 ? 0x6c47ff : tier === 2 ? 0xffa531 : 0x37d4ff,
+              18,
+            )
+            shake = Math.max(shake, 0.25)
+          }
+        }
+        if (wasDrifting && !van.drift.active) emit({ type: 'drift', on: false })
+        wasDrifting = van.drift.active
+        driftHeld = wantDrift
         if (dev.autopilot) {
           // Chase a point 14 m ahead on the centreline.
           const here = track.nearest(van.position)
@@ -435,6 +478,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       } else if (phase === 'countdown') {
         brake = true
       } else if (phase === 'finished') {
+        if (van.drift.active) van.endDrift()
         // Roll to a stop past the line.
         throttle = 0
         brake = Math.abs(van.speed) < 4
@@ -455,6 +499,19 @@ export function createGame(parent: HTMLElement): GameHandle {
 
       const steerScale = THREE.MathUtils.clamp(Math.abs(van.speed) / 3, 0.25, 1)
       lastThrottle = throttle
+      if (van.drift.active) {
+        sparkTimer -= dt
+        if (sparkTimer <= 0) {
+          sparkTimer = 0.05
+          const tier = van.drift.tier
+          const color = tier >= 3 ? 0x6c47ff : tier === 2 ? 0xffa531 : tier === 1 ? 0x37d4ff : 0xffffff
+          // Sparks at the rear wheel on the outside of the slide.
+          tmp.set(Math.cos(van.heading), 0, -Math.sin(van.heading)).multiplyScalar(-van.drift.dir * 1.1)
+          const at = van.position.clone().addScaledVector(van.forwardDir, -1.9).add(tmp)
+          at.y += 0.25
+          spawnBurst(at, color, 3, 2.5)
+        }
+      }
       van.update(dt, throttle, steer * steerScale * Math.sign(van.speed || 1), brake)
       collide(dt)
 
@@ -480,7 +537,8 @@ export function createGame(parent: HTMLElement): GameHandle {
       if (bots) for (const b of bots.update(dt, time, van.position, driving)) onBotHit(b.position)
 
       // Camera.
-      const fwd = van.forwardDir
+      // Follows the travel direction, so in a drift the body visibly swings out.
+      const fwd = van.travelDir.lerp(van.forwardDir, 0.35).normalize()
       if (camOverride) {
         camera.position.copy(camOverride.pos)
         camera.lookAt(camOverride.look)
@@ -608,6 +666,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       },
       /** Hide the pickups within r metres of the van (clean framing for screenshots). */
       offCentre: () => (van ? track.nearest(van.position).distance : 0),
+      on: (cb: (e: GameEvent) => void) => eventListeners.add(cb),
       clearItemsNear: (r: number) => {
         if (!van || !collectibles) return
         for (const c of collectibles.all) {
@@ -632,6 +691,7 @@ export function createGame(parent: HTMLElement): GameHandle {
       touch.throttle = input.throttle
       touch.steer = input.steer
       touch.brake = input.brake
+      touch.drift = input.drift
     },
     subscribe: (cb) => {
       listeners.add(cb)

@@ -49,16 +49,21 @@ to validate runs.
 
 ## Controls
 
-- Keyboard: WASD or arrows, space to brake/handbrake, R to restart, M to mute.
-- Touch: left/right steering buttons on the left, accelerate/brake on the right. Reduced
+- Keyboard: WASD or arrows, Space or Shift to drift (hold through a corner, release for a
+  mini-turbo), X to brake, R to restart, M to mute.
+- Touch: left/right steering buttons on the left, drift and accelerate on the right. Reduced
   rendering quality (no shadows, fewer grass blades) on phones.
-- Camera: chase camera behind and above, FOV widens with speed.
+- Camera: chase camera behind and above that follows the travel direction, so a drift
+  visibly swings the body out; FOV widens with speed and boosts.
 
 ## Van handling
 
-Arcade bicycle model inherited from buildwithclerk: 9 m/s^2 acceleration, 16 m/s top speed
-(boost: 24 m/s), 32 degrees steering, 3.75 m wheelbase. Off-asphalt: top speed clamps to 9 m/s.
-Hitting a wall or a bot cuts speed to 20 %.
+Arcade kart model: 10 m/s^2 acceleration, 17 m/s top speed (boost x1.45), 30 degrees of
+steering lock that shrinks with speed, smoothed steering input, and a travel direction that
+lags the heading (the slide). Drifting locks the turn direction, lets the stick tighten or
+widen the arc, scrubs a little speed and charges three mini-turbo tiers (0.7 s, 1.6 s, 2.6 s)
+worth 0.6 s, 1.1 s and 1.8 s of boost, with blue, orange and purple sparks. Off-asphalt grip
+drops (gravel 0.74, grass 0.52, water 0.35). Hitting a wall or a bot cuts speed hard.
 
 ## Leaderboard and auth
 
@@ -74,14 +79,16 @@ Hitting a wall or a bot cuts speed to 20 %.
 ## Art and audio
 
 - Van: `clerk_van.glb` (CC BY 4.0 base model by circlegent, Clerk livery by Jibaru).
-- World: Poly Haven alps HDRI, PBR terrain splat, ez-tree forest, Poly Haven photoscans,
-  Kenney kits (racing props, commercial buildings for the HQ). Start arch, grandstand, tunnel
-  and bridge are generated in code. All CC0.
+- World: low-poly and flat-shaded to match the arcade UI. Gradient sky dome with cartoon
+  clouds, flat-coloured terrain, Kenney Nature Kit trees/bushes/rocks/flowers, Kenney racing
+  props and city kits for the HQ; road, tunnel, bridge, start arch and grandstand generated
+  in code. All CC0. No photographic textures.
 - Collectibles: game-icons.net SVGs (CC BY 3.0) extruded in Three.js, emissive Clerk purple/lime,
   floating and spinning, particle burst on pickup.
-- Music: three CC0 chiptunes by Juhani Junkala (OpenGameArt). Every other sound (engine,
-  tyres, pickups, hits, countdown, fanfare) is synthesized with the Web Audio API. Every file
-  is listed in `public/CREDITS.md`.
+- Music: kart-style CC0 tracks from OpenGameArt (MintoDog's "Sunny City" on the title, "Pure
+  Raceway", "Fever Stadium" and "Joyful Jungle" rotating per run, Joth's "Funked Up" on the
+  results). Every other sound (engine, tyres, skids, mini-turbos, pickups, hits, countdown,
+  fanfare) is synthesized with the Web Audio API. Every file is listed in `public/CREDITS.md`.
 
 ## Cut list (not in v1)
 

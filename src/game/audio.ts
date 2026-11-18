@@ -18,10 +18,14 @@ export type GameAudio = {
 
 const MUSIC = {
   title: assetUrl('/audio/title.mp3'),
-  race: assetUrl('/audio/race.mp3'),
+  'race-1': assetUrl('/audio/race-1.mp3'),
+  'race-2': assetUrl('/audio/race-2.mp3'),
+  'race-3': assetUrl('/audio/race-3.mp3'),
   ending: assetUrl('/audio/ending.mp3'),
 } as const
 type TrackName = keyof typeof MUSIC
+const RACE_TRACKS: TrackName[] = ['race-1', 'race-2', 'race-3']
+let raceIndex = Math.floor(Math.random() * RACE_TRACKS.length)
 
 const STORAGE_KEY = 'clerk-van-run:muted'
 
@@ -111,8 +115,11 @@ export function createAudio(): GameAudio {
     if (s.phase !== lastPhase) {
       lastPhase = s.phase
       if (s.phase === 'ready') play('title', true)
-      else if (s.phase === 'countdown') play('race', true)
-      else if (s.phase === 'finished') play('ending', false)
+      else if (s.phase === 'countdown') {
+        // A different race track each run, in rotation.
+        raceIndex = (raceIndex + 1) % RACE_TRACKS.length
+        play(RACE_TRACKS[raceIndex] ?? 'race-1', true)
+      } else if (s.phase === 'finished') play('ending', false)
     }
     engine?.update(
       s.speedKmh / 3.6,
@@ -120,6 +127,7 @@ export function createAudio(): GameAudio {
       s.boost > 0,
       s.phase === 'racing' || s.phase === 'finished',
       offroad,
+      s.drifting,
     )
   }
 
@@ -148,6 +156,13 @@ export function createAudio(): GameAudio {
         break
       case 'offroad':
         offroad = e.on
+        break
+      case 'drift':
+        if (e.on) blip(c, sfxGain, [300, 180], 0.12, 'square', 0.18)
+        break
+      case 'turbo':
+        sweep(c, sfxGain, 180 + e.tier * 60, 1200 + e.tier * 500, 0.35 + e.tier * 0.1, 'sawtooth', 0.28)
+        if (e.tier >= 2) arpeggio(c, sfxGain, [659, 988, 1319].slice(0, e.tier), 0.07, 'triangle', 0.3)
         break
     }
   }
@@ -301,7 +316,14 @@ function noiseBuffer(ctx: AudioContext, seconds: number): AudioBuffer {
 // --------------------------------------------------------------------------------- engine
 
 type Engine = {
-  update: (speed: number, throttle: number, boost: boolean, running: boolean, offroad: boolean) => void
+  update: (
+    speed: number,
+    throttle: number,
+    boost: boolean,
+    running: boolean,
+    offroad: boolean,
+    drifting: boolean,
+  ) => void
   dispose: () => void
 }
 
@@ -337,9 +359,24 @@ function createEngine(ctx: AudioContext, out: AudioNode): Engine {
   tyres.connect(tyreFilter).connect(tyreGain).connect(out)
   tyres.start()
 
+  // Skid: a second noise voice, band-passed high, only while drifting.
+  const skid = ctx.createBufferSource()
+  skid.buffer = noiseBuffer(ctx, 2)
+  skid.loop = true
+  const skidFilter = ctx.createBiquadFilter()
+  skidFilter.type = 'bandpass'
+  skidFilter.frequency.value = 2400
+  skidFilter.Q.value = 1.2
+  const skidGain = ctx.createGain()
+  skidGain.gain.value = 0
+  skid.connect(skidFilter).connect(skidGain).connect(out)
+  skid.start()
+
   return {
-    update: (speed, throttle, boost, running, offroad) => {
+    update: (speed, throttle, boost, running, offroad, drifting) => {
       const t = ctx.currentTime
+      skidGain.gain.setTargetAtTime(running && drifting ? 0.16 + Math.min(1, speed / 17) * 0.1 : 0, t, 0.08)
+      skidFilter.frequency.setTargetAtTime(1800 + Math.min(1, speed / 17) * 1400, t, 0.1)
       const k = Math.min(1, Math.abs(speed) / 17)
       // Fake gears: pitch climbs then drops three times across the speed range.
       const gear = (k * 3) % 1
@@ -357,6 +394,7 @@ function createEngine(ctx: AudioContext, out: AudioNode): Engine {
       a.stop()
       b.stop()
       tyres.stop()
+      skid.stop()
     },
   }
 }

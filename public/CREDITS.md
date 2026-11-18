@@ -5,21 +5,11 @@
 - **models/clerk_van.glb**: "Clerk Van" by Jibaru (https://github.com/Jibaru/clerk-van), built on
   "Ford Transit With Light Bar" by circlegent (Sketchfab), licensed CC BY 4.0. Livery: Clerk brand
   assets. Compressed with gltf-transform (meshopt + WebP).
-- **models/kits/**: low-poly models from Kenney (https://kenney.nl), CC0 1.0. Only the files the
-  track uses are shipped.
-- **models/real/**: photoscanned plants and rocks from Poly Haven (https://polyhaven.com), CC0:
-  fern_02, grass_medium_02, dandelion_01, flower_heliophila, rock_07, rock_09, stone_01,
-  boulder_01, namaqualand_boulder_02/04/06, dead_tree_trunk, fir_sapling. Decimated with
-  gltf-transform `simplify` and compressed with meshopt + WebP.
-- **Trees**: generated at runtime with ez-tree by Dan Greenheck (MIT).
-
-## Textures
-
-- **textures/alps_field/alps_field_1k.hdr**: "Alps Field" HDRI by Poly Haven
-  (https://polyhaven.com/a/alps_field), CC0. Sky, image-based lighting and fog colour.
-- **textures/asphalt_02/**: "Asphalt 02" by Poly Haven (https://polyhaven.com/a/asphalt_02), CC0.
-- **textures/Grass005/**, **Ground037/**, **Rock051/**, **Gravel023/**: ambientCG
-  (https://ambientcg.com), CC0. Downscaled to 512 px.
+- **models/kits/**: low-poly models from Kenney (https://kenney.nl), CC0 1.0: Nature Kit (trees,
+  bushes, rocks, flowers, mushrooms), Racing Kit (barriers, cones, tents, pit buildings, light
+  posts), City Kit Commercial and Suburban (the Clerk HQ). Only the files the track uses are
+  shipped. The sky, clouds, terrain, road, tunnel, bridge, start arch and grandstand are
+  generated in code.
 
 ## Icons (collectibles and bots, extruded in 3D at runtime)
 
@@ -33,12 +23,15 @@ From game-icons.net, licensed CC BY 3.0 (https://creativecommons.org/licenses/by
 
 ## Music
 
-- **audio/title.mp3**, **audio/race.mp3**, **audio/ending.mp3**: "Title Screen", "Level 1" and
-  "Ending" from "5 Action Chiptunes" by Juhani Junkala (https://opengameart.org/content/5-chiptunes-action),
-  CC0. Re-encoded from WAV to MP3.
-- Sound effects (engine, tyres, pickups, hits, countdown, fanfare) are synthesized at runtime
-  with the Web Audio API; no third-party samples.
+All CC0 from OpenGameArt, re-encoded to MP3:
 
+- **audio/title.mp3**: "Sunny City" by MintoDog (https://opengameart.org/content/sunny-city)
+- **audio/race-1.mp3**: "Pure Raceway" by MintoDog (https://opengameart.org/content/pure-raceway)
+- **audio/race-2.mp3**: "Fever Stadium" by MintoDog (https://opengameart.org/content/fever-stadium)
+- **audio/race-3.mp3**: "Joyful Jungle" by MintoDog (https://opengameart.org/content/joyful-jungle)
+- **audio/ending.mp3**: "Funked Up" by Joth (https://opengameart.org/content/funked-up)
+- Sound effects (engine, tyres, skids, pickups, hits, countdown, fanfare) are synthesized at
+  runtime with the Web Audio API; no third-party samples.
 ## Fonts
 
 - **fonts/BarlowCondensed-*.woff2**: Barlow Condensed by Jeremy Tribby (https://tribby.com/fonts/barlow/),
