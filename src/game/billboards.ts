@@ -106,15 +106,19 @@ const purpleMat = new THREE.MeshStandardMaterial({ color: PURPLE, roughness: 0.6
 function buildPoster(track: Track, spec: (typeof POSTERS)[number]): THREE.Group {
   const g = new THREE.Group()
   const { point, tangent, normal } = track.at(spec.u)
-  const lateral = spec.side * (ROAD_W / 2 + SHOULDER_W + 5)
+  const lateral = spec.side * (ROAD_W / 2 + SHOULDER_W + 3.2)
   g.position.copy(point).addScaledVector(normal, lateral)
   g.position.y = point.y
-  // Face back down the road (toward the approaching van), turned 25° toward the asphalt.
-  g.rotation.y = Math.atan2(-tangent.x, -tangent.z) + spec.side * 0.45
-  const w = 4
+  // The poster face (+z) aims at a spot on the centreline 35 m back, so the approaching van
+  // sees it square-on.
+  const target = point.clone().addScaledVector(tangent, -35)
+  target.y = g.position.y
+  g.lookAt(target)
+  const w = 6.4
   const h = w * 1.25
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, h + 0.3, 0.2), inkMat)
-  frame.position.y = 2.6 + h / 2
+  const base = 1.6
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, h + 0.4, 0.3), inkMat)
+  frame.position.y = base + h / 2
   frame.castShadow = true
   g.add(frame)
   const face = new THREE.Mesh(
@@ -125,14 +129,18 @@ function buildPoster(track: Track, spec: (typeof POSTERS)[number]): THREE.Group 
       metalness: 0,
       emissive: 0xffffff,
       emissiveMap: tex(spec.img),
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.55,
     }),
   )
-  face.position.set(0, frame.position.y, 0.11)
+  face.position.set(0, frame.position.y, 0.16)
   g.add(face)
-  for (const dx of [-w / 2 + 0.3, w / 2 - 0.3]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 2.7, 8), steel)
-    post.position.set(dx, 1.35, 0)
+  // Purple trim along the top edge, like the eyebrow on the event posters.
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.18, 0.34), purpleMat)
+  trim.position.y = base + h + 0.29
+  g.add(trim)
+  for (const dx of [-w / 2 + 0.5, w / 2 - 0.5]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, base + 0.2, 8), steel)
+    post.position.set(dx, (base + 0.2) / 2, 0)
     post.castShadow = true
     g.add(post)
   }
@@ -241,8 +249,8 @@ export function billboardBlocked(track: Track): Array<{ x: number; z: number; r:
   const out: Array<{ x: number; z: number; r: number }> = []
   for (const p of POSTERS) {
     const { point, normal } = track.at(p.u)
-    const c = point.clone().addScaledVector(normal, p.side * (ROAD_W / 2 + SHOULDER_W + 5))
-    out.push({ x: c.x, z: c.z, r: 5 })
+    const c = point.clone().addScaledVector(normal, p.side * (ROAD_W / 2 + SHOULDER_W + 3.2))
+    out.push({ x: c.x, z: c.z, r: 6 })
   }
   return out
 }
