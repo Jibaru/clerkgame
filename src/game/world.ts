@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { billboardBlocked, buildBillboards } from './billboards'
 import { buildEnvironment, type Environment } from './environment'
 import { loadKitModel } from './kits'
 import { createRoadMaterials } from './materials'
@@ -13,7 +14,7 @@ export const COLORS = {
 } as const
 
 /** Track ratios of the built sections. The tunnel and bridge also drive gameplay (lights, walls). */
-export const TUNNEL = { u0: 0.505, u1: 0.585, halfWidth: 6.4, height: 5.6 }
+export const TUNNEL = { u0: 0.505, u1: 0.585, halfWidth: 7.2, height: 7.4 }
 export const BRIDGE = { u: 0.845, half: 0.036 }
 export const HAIRPIN_WALL = { u0: 0.3, u1: 0.465 }
 /** Where the shortcut meets the road, in main-track ratio. */
@@ -94,6 +95,8 @@ export function buildWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer, op
   root.add(buildBridge(track))
   const tunnel = buildTunnel(track)
   root.add(tunnel)
+  buildBillboards(root, track, { tunnel: TUNNEL })
+  const adBlocks = billboardBlocked(track)
 
   // --- Collision boxes for the buildings, filled in as the kits load. -----------------------
   const obstacles: Obstacle[] = []
@@ -115,6 +118,7 @@ export function buildWorld(scene: THREE.Scene, renderer: THREE.WebGLRenderer, op
     if (near.u > TUNNEL.u0 - 0.01 && near.u < TUNNEL.u1 + 0.01 && near.distance < 26) return true
     // The start area and HQ: the first 110 m of the lap, 60 m to the outside.
     if ((near.u < 0.11 || near.u > 0.985) && near.distance < 60) return true
+    for (const b of adBlocks) if ((x - b.x) ** 2 + (z - b.z) ** 2 < b.r * b.r) return true
     for (const o of obstacles) {
       if (x > o.box.min.x - 4 && x < o.box.max.x + 4 && z > o.box.min.z - 4 && z < o.box.max.z + 4)
         return true
@@ -245,8 +249,8 @@ function buildTunnel(track: Track): THREE.Group {
   // Outer mound, tapering to a portal at both ends.
   const taper = (t: number) => {
     const edge = Math.min(t, 1 - t)
-    const s = THREE.MathUtils.smoothstep(edge, 0, 0.22)
-    return 1.12 + s * 2.4
+    const s = THREE.MathUtils.smoothstep(edge, 0, 0.3)
+    return 1.1 + s * 2.2
   }
   const outer = new THREE.Mesh(
     buildTube(

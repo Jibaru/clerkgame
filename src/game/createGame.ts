@@ -349,7 +349,7 @@ export function createGame(parent: HTMLElement): GameHandle {
     const inRange = (u0: number, u1: number) => near.u > u0 && near.u < u1
     // Tunnel: keep inside the arch.
     if (inRange(TUNNEL.u0, TUNNEL.u1)) {
-      const limit = TUNNEL.halfWidth - 1.3
+      const limit = TUNNEL.halfWidth - 1.6
       if (Math.abs(lateral) > limit) {
         p.addScaledVector(normal, Math.sign(lateral) * limit - lateral)
         van.speed *= 0.97
@@ -559,12 +559,18 @@ export function createGame(parent: HTMLElement): GameHandle {
         camera.fov = THREE.MathUtils.damp(camera.fov, 45, 3, dt)
       } else {
         const speedK = Math.abs(van.speed) / 17
-        const back = lite ? 15 : 12.5 + speedK * 2.5
-        const up = lite ? 7.5 : 6 + speedK * 1.2
+        // Inside (and just before) the tunnel the camera drops low and close so it never
+        // passes through the arch; blends back out over ~25 m.
+        const uNow = track.nearest(van.position).u
+        const tIn = THREE.MathUtils.smoothstep(uNow, TUNNEL.u0 - 0.03, TUNNEL.u0 - 0.005)
+        const tOut = 1 - THREE.MathUtils.smoothstep(uNow, TUNNEL.u1 - 0.005, TUNNEL.u1 + 0.025)
+        const tunnelK = Math.min(tIn, tOut)
+        const back = THREE.MathUtils.lerp(lite ? 15 : 12.5 + speedK * 2.5, 8.5, tunnelK)
+        const up = THREE.MathUtils.lerp(lite ? 7.5 : 6 + speedK * 1.2, 3.2, tunnelK)
         camPos.copy(van.position).addScaledVector(fwd, -back)
         camPos.y = van.position.y + up
         camLook.copy(van.position).addScaledVector(fwd, 12)
-        camLook.y = van.position.y + 1.6
+        camLook.y = van.position.y + THREE.MathUtils.lerp(1.6, 1.2, tunnelK)
         const k = phase === 'countdown' ? 2.5 : 6
         camera.position.x = THREE.MathUtils.damp(camera.position.x, camPos.x, k, dt)
         camera.position.y = THREE.MathUtils.damp(camera.position.y, camPos.y, k, dt)
@@ -575,7 +581,7 @@ export function createGame(parent: HTMLElement): GameHandle {
           camera.position.y += (Math.random() - 0.5) * shake * 0.4
         }
         camera.lookAt(camLook)
-        const targetFov = 52 + speedK * 14 + (van.boost > 0 ? 6 : 0)
+        const targetFov = 52 + speedK * 14 + (van.boost > 0 ? 6 : 0) + tunnelK * 8
         camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 4, dt)
       }
       camera.updateProjectionMatrix()

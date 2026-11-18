@@ -307,31 +307,33 @@ function DriftMeter({ time, tier }: { time: number; tier: number }) {
   )
 }
 
-/** Semicircular gauge on a dark plate: speed arc, ticks, needle, boost reserve as an inner arc. */
+/**
+ * Semicircular gauge on a dark plate. The arcs are sampled polylines (no SVG arc flags, so a
+ * full gauge can never flip into a circle) and everything stays inside the plate: the number
+ * sits in the dial above the pivot, the pivot on the plate's base line.
+ */
 function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
-  const k = Math.min(1, kmh / MAX_KMH)
+  const k = Math.min(1, Math.max(0, kmh / MAX_KMH))
   const W = 240
-  const H = 150
-  const R = 88
+  const H = 140
+  const R = 92
   const cx = W / 2
-  const cy = 118
-  const arc = (r: number, from: number, to: number) => {
-    const a0 = Math.PI + from * Math.PI
-    const a1 = Math.PI + to * Math.PI
-    const x0 = cx + r * Math.cos(a0)
-    const y0 = cy + r * Math.sin(a0)
-    const x1 = cx + r * Math.cos(a1)
-    const y1 = cy + r * Math.sin(a1)
-    const large = to - from > 0.5 ? 1 : 0
-    return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`
+  const cy = 124
+  const points = (r: number, from: number, to: number, steps = 40) => {
+    const out: string[] = []
+    for (let i = 0; i <= steps; i++) {
+      const a = Math.PI + (from + ((to - from) * i) / steps) * Math.PI
+      out.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`)
+    }
+    return out.join(' ')
   }
-  const needle = Math.PI + k * Math.PI
-  const nx = cx + (R - 20) * Math.cos(needle)
-  const ny = cy + (R - 20) * Math.sin(needle)
+  const needleA = Math.PI + k * Math.PI
+  const nx = cx + (R - 26) * Math.cos(needleA)
+  const ny = cy + (R - 26) * Math.sin(needleA)
   const boostK = Math.min(1, boost / 3)
   const ticks = Array.from({ length: 11 }, (_, i) => i / 10)
   return (
-    <div className="relative" style={{ width: W, height: H }}>
+    <div className="relative overflow-hidden" style={{ width: W, height: H }}>
       <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full" aria-hidden>
         <title>Speed</title>
         <defs>
@@ -340,85 +342,92 @@ function Speedo({ kmh, boost }: { kmh: number; boost: number }) {
             <stop offset="1" stopColor="#7cff00" />
           </linearGradient>
           <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="rgba(24,24,30,0.92)" />
-            <stop offset="1" stopColor="rgba(12,12,16,0.96)" />
+            <stop offset="0" stopColor="rgba(24,24,30,0.94)" />
+            <stop offset="1" stopColor="rgba(12,12,16,0.97)" />
           </linearGradient>
+          <clipPath id="plateClip">
+            <path d={`M 4 ${H} A ${cx - 4} ${cx - 4} 0 0 1 ${W - 4} ${H} Z`} />
+          </clipPath>
         </defs>
-        {/* Plate: a half disc with a flat base, so the gauge reads against any background. */}
         <path
-          d={`M 6 ${H} A ${cx - 6} ${cx - 6} 0 0 1 ${W - 6} ${H} Z`}
+          d={`M 4 ${H} A ${cx - 4} ${cx - 4} 0 0 1 ${W - 4} ${H} Z`}
           fill="url(#plate)"
           stroke="rgba(255,255,255,0.14)"
           strokeWidth="2"
         />
-        <path d={arc(R, 0, 1)} stroke="rgba(0,0,0,0.7)" strokeWidth="20" fill="none" strokeLinecap="round" />
-        <path
-          d={arc(R, 0, 1)}
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="14"
-          fill="none"
-          strokeLinecap="round"
-        />
-        {k > 0.005 && (
-          <path
-            d={arc(R, 0, k)}
-            stroke="url(#speed)"
-            strokeWidth="14"
+        <g clipPath="url(#plateClip)">
+          <polyline
+            points={points(R, 0, 1)}
+            stroke="rgba(0,0,0,0.75)"
+            strokeWidth="18"
             fill="none"
-            strokeLinecap="round"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(124,255,0,0.55))' }}
+            strokeLinecap="butt"
           />
-        )}
-        {ticks.map((t) => {
-          const a = Math.PI + t * Math.PI
-          const major = Math.round(t * 10) % 5 === 0
-          const inner = R - (major ? 26 : 22)
-          const outer = R - 14
-          return (
-            <line
-              key={t}
-              x1={cx + inner * Math.cos(a)}
-              y1={cy + inner * Math.sin(a)}
-              x2={cx + outer * Math.cos(a)}
-              y2={cy + outer * Math.sin(a)}
-              stroke={t <= k ? '#fff' : 'rgba(255,255,255,0.35)'}
-              strokeWidth={major ? 3 : 1.5}
+          <polyline
+            points={points(R, 0, 1)}
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="12"
+            fill="none"
+            strokeLinecap="butt"
+          />
+          {k > 0.004 && (
+            <polyline
+              points={points(R, 0, k)}
+              stroke="url(#speed)"
+              strokeWidth="12"
+              fill="none"
+              strokeLinecap="butt"
             />
-          )
-        })}
-        {boostK > 0 && (
-          <path
-            d={arc(R - 36, 0, boostK)}
-            stroke="#37d4ff"
-            strokeWidth="6"
-            fill="none"
+          )}
+          {ticks.map((t) => {
+            const a = Math.PI + t * Math.PI
+            const major = Math.round(t * 10) % 5 === 0
+            const inner = R - (major ? 22 : 18)
+            const outer = R - 10
+            return (
+              <line
+                key={t}
+                x1={cx + inner * Math.cos(a)}
+                y1={cy + inner * Math.sin(a)}
+                x2={cx + outer * Math.cos(a)}
+                y2={cy + outer * Math.sin(a)}
+                stroke={t <= k ? '#fff' : 'rgba(255,255,255,0.35)'}
+                strokeWidth={major ? 3 : 1.5}
+              />
+            )
+          })}
+          {boostK > 0 && (
+            <polyline
+              points={points(R - 32, 0, boostK)}
+              stroke="#37d4ff"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="butt"
+            />
+          )}
+          <line
+            x1={cx}
+            y1={cy}
+            x2={nx}
+            y2={ny}
+            stroke="#fff"
+            strokeWidth="4"
             strokeLinecap="round"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(55,212,255,0.9))' }}
+            style={{ transition: 'all 120ms linear' }}
           />
-        )}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={nx}
-          y2={ny}
-          stroke="#fff"
-          strokeWidth="4"
-          strokeLinecap="round"
-          style={{ transition: 'all 120ms linear' }}
-        />
-        <circle cx={cx} cy={cy} r="8" fill="#131316" stroke="#fff" strokeWidth="3" />
+          <circle cx={cx} cy={cy} r="7" fill="#131316" stroke="#fff" strokeWidth="3" />
+        </g>
       </svg>
-      <div className="absolute inset-x-0 bottom-1 flex flex-col items-center leading-none">
+      <div className="absolute inset-x-0 flex flex-col items-center leading-none" style={{ top: 58 }}>
         <span className="display text-4xl font-black italic tabular-nums drop-shadow-[0_2px_0_rgba(0,0,0,0.8)]">
           {kmh}
         </span>
-        <span className="display text-[10px] tracking-[0.3em] text-clerk-gray">km/h</span>
+        {boost > 0 ? (
+          <span className="display blink text-[11px] font-extrabold tracking-[0.3em] text-boost">Boost</span>
+        ) : (
+          <span className="display text-[10px] tracking-[0.3em] text-clerk-gray">km/h</span>
+        )}
       </div>
-      {boost > 0 && (
-        <span className="display blink absolute left-1/2 top-[66px] -translate-x-1/2 text-sm font-extrabold tracking-[0.3em] text-boost">
-          Boost
-        </span>
-      )}
     </div>
   )
 }

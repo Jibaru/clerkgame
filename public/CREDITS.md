@@ -36,3 +36,9 @@ All CC0 from OpenGameArt, re-encoded to MP3:
 
 - **fonts/BarlowCondensed-*.woff2**: Barlow Condensed by Jeremy Tribby (https://tribby.com/fonts/barlow/),
   SIL Open Font License 1.1. Latin subset from Google Fonts. Used for the HUD and menus.
+
+## Trackside advertising
+
+- **billboards/**: posters, stickers and logotypes from the Clerk × Crafter Station event merch
+  kit (Clerk brand assets, Crafter Station brand assets, team portraits by their owners), used
+  with permission for this non-profit event game. Not covered by the MIT license of the code.
